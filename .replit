@@ -1,0 +1,13 @@
+# Replit: press Run to start the app. Data lives in memory and resets on every start.
+modules = ["nodejs-20"]
+run = "npm start"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+# Deployment must run ONE instance: sessions and the database are in memory.
+# In the Deploy screen choose Reserved VM, or Autoscale with max instances set to 1.
+[deployment]
+run = ["sh", "-c", "NODE_ENV=production TRUST_PROXY=1 node src/server.js"]
+deploymentTarget = "autoscale"

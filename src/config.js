@@ -8,7 +8,8 @@ module.exports = {
   SESSION_SECRET: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
   UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'),
   MAX_UPLOAD_BYTES: 5 * 1024 * 1024,
-  LOGIN_MAX_FAILURES: 10,
+  LOGIN_MAX_FAILURES: 10, // per account (email)
+  LOGIN_MAX_FAILURES_PER_IP: 50,
   LOGIN_WINDOW_MS: 15 * 60 * 1000,
   // How many proxy hops to trust for the client IP. 0 = trust none, so a forged X-Forwarded-For
   // header is ignored. Replit (REPL_ID is set there) serves the app through one TLS proxy.

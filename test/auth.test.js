@@ -65,17 +65,18 @@ test('11th failed login in a row is rate limited with 429', async () => {
 });
 
 // Review A finding 1: rotating a forged X-Forwarded-For header gave every guess a fresh limit.
-test('forged X-Forwarded-For does not reset the login limit when no proxy is trusted', async () => {
+test('forged X-Forwarded-For does not reset the per-IP limit (50) when no proxy is trusted', async () => {
   const { app: fresh } = await makeApp();
   const statuses = [];
-  for (let i = 1; i <= 11; i++) {
+  for (let i = 1; i <= 51; i++) {
     const res = await request(fresh)
       .post('/api/login')
       .set('X-Forwarded-For', `203.0.113.${i}`)
       .send({ email: `nobody${i}@alpha.test`, password: 'guess' });
     statuses.push(res.status);
   }
-  assert.equal(statuses[10], 429, statuses.join(' '));
+  assert.equal(statuses[49], 401, statuses.join(' '));
+  assert.equal(statuses[50], 429, statuses.join(' '));
 });
 
 test('one account is limited to 10 failures even when every guess comes from a new IP', async () => {
@@ -135,4 +136,17 @@ test('broken JSON is 400 and an oversized body is 413, with no internals leaked'
     .send({ email: 'owner@alpha.test', password: 'x'.repeat(30 * 1024) });
   assert.equal(huge.status, 413);
   assert.deepEqual(huge.body, { error: 'Invalid input' });
+});
+
+// Review A round 2, finding 1: 10 bad logins on ONE account from a shared IP also locked out
+// every other user behind that IP (office NAT, or a proxy with TRUST_PROXY unset).
+test("one user's failed logins do not lock out a colleague on the same network", async () => {
+  const { app: fresh } = await makeApp();
+  for (let i = 0; i < 10; i++) {
+    await request(fresh)
+      .post('/api/login')
+      .send({ email: 'owner@alpha.test', password: 'typo' + i });
+  }
+  const colleague = await request(fresh).post('/api/login').send({ email: 'dispatch@alpha.test', password: PASSWORD });
+  assert.equal(colleague.status, 200);
 });

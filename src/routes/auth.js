@@ -15,20 +15,18 @@ const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', 10);
 function authRoutes() {
   const router = express.Router();
 
-  // Created per app, so each test app gets its own counter.
-  // Only failed logins count, so normal use never hits the limit.
-  const loginLimiter = rateLimit({
-    windowMs: config.LOGIN_WINDOW_MS,
-    limit: config.LOGIN_MAX_FAILURES,
-    skipSuccessfulRequests: true,
-    standardHeaders: 'draft-8',
-    legacyHeaders: false,
-    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-  });
-
-  // Second limit per account (email), so guessing one account's password from many IPs is
-  // also stopped. Trade-off: someone can lock an account out for 15 minutes; acceptable for
-  // a demo, and production would add a CAPTCHA or email unlock instead.
+  // Two login limits, both created per app (so each test app gets its own counters) and both
+  // counting failed logins only (so normal use never hits them).
+  //
+  // 1. Per account: 10 failures per email per 15 minutes, from any IP. This is the brute-force
+  //    protection: nobody gets more than 10 guesses at one password, however many IPs they use.
+  //    Trade-off (accepted for a demo, stated in ARCHITECTURE.md): anyone who knows an email can
+  //    keep that one account locked by sending 10 bad guesses every 15 minutes. Production would
+  //    switch to a CAPTCHA or email unlock after the failures instead of a hard block.
+  //
+  // 2. Per IP: 50 failures per 15 minutes. Stops one source spraying a password across many
+  //    accounts. It is set well above 10 so one person's typos (or one attacked account) do not
+  //    lock out colleagues who share the same office network or proxy IP.
   const accountLimiter = rateLimit({
     windowMs: config.LOGIN_WINDOW_MS,
     limit: config.LOGIN_MAX_FAILURES,
@@ -39,7 +37,16 @@ function authRoutes() {
     message: { error: 'Too many login attempts. Try again in 15 minutes.' },
   });
 
-  router.post('/login', loginLimiter, accountLimiter, async (req, res) => {
+  const ipLimiter = rateLimit({
+    windowMs: config.LOGIN_WINDOW_MS,
+    limit: config.LOGIN_MAX_FAILURES_PER_IP,
+    skipSuccessfulRequests: true,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+  });
+
+  router.post('/login', ipLimiter, accountLimiter, async (req, res) => {
     const { email, password } = loginBody.parse(req.body);
     const user = await findUserForLogin(req.app.locals.db, email);
     const ok = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);

@@ -114,3 +114,34 @@ test('path tricks in the file name cannot escape the company upload folder', asy
   const names = fs.readdirSync(folder);
   assert.ok(names.every((n) => /^[0-9a-f-]{36}\.(pdf|png|jpg)$/.test(n)));
 });
+
+// Review A round 2, finding 2: a file that starts with %PDF but carries HTML is stored as a PDF.
+// It must never render as a page: forced download, no sniffing, and a sandbox CSP as a backstop.
+test('downloads can never run as a web page (attachment, nosniff, sandbox CSP)', async () => {
+  const { app, ids } = await makeApp();
+  const agent = await agentFor(app, 'dispatch@alpha.test');
+  const id = ids.loads['A-1001'];
+  const polyglot = Buffer.from('%PDF-1.4\n<script>alert(document.domain)</script>\n');
+  assert.equal((await agent.post(`/api/loads/${id}/document`).attach('file', polyglot, 'x.pdf')).status, 201);
+  const res = await agent.get(`/api/loads/${id}/document`).buffer(true).parse(binary);
+  assert.match(res.headers['content-disposition'], /^attachment/);
+  assert.equal(res.headers['x-content-type-options'], 'nosniff');
+  assert.match(res.headers['content-security-policy'], /sandbox/);
+  assert.match(res.headers['content-security-policy'], /default-src 'none'/);
+});
+
+// Review A round 2, finding 4: uploaded files piled up across restarts.
+test('startup cleanup removes only stored upload files, nothing else', async () => {
+  const { clearUploads } = require('../src/storage');
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'fd-clear-'));
+  fs.mkdirSync(path.join(dir, '1'));
+  const stored = path.join(dir, '1', '3f2b8c1e-0d4a-4b7e-9c55-1a2b3c4d5e6f.pdf');
+  const other = path.join(dir, '1', 'notes.txt');
+  const outside = path.join(dir, 'keep.pdf');
+  for (const f of [stored, other, outside]) fs.writeFileSync(f, 'x');
+  clearUploads(dir);
+  assert.equal(fs.existsSync(stored), false);
+  assert.equal(fs.existsSync(other), true);
+  assert.equal(fs.existsSync(outside), true);
+  clearUploads(path.join(dir, 'does-not-exist')); // a missing folder is fine
+});

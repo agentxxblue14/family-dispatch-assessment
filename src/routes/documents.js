@@ -33,8 +33,10 @@ function documentRoutes() {
   router.get('/:id/document', requireLoadAccess('doc:view'), async (req, res) => {
     const doc = await req.repo.getDocument(req.load.id);
     if (!doc) throw notFound();
+    // Always a download, never a page. The sandbox CSP is a backstop: even if a browser did
+    // open the file, a "PDF" that hides HTML inside could not run scripts on this site.
     res.download(filePath(req.user.company_id, doc.stored_name), doc.filename, {
-      headers: { 'Content-Type': doc.mime },
+      headers: { 'Content-Type': doc.mime, 'Content-Security-Policy': "default-src 'none'; sandbox" },
     });
   });
 

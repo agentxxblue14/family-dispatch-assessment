@@ -3,8 +3,10 @@ const { openDb } = require('./db');
 const { seed } = require('./db/seed');
 const { createApp } = require('./app');
 const config = require('./config');
+const { clearUploads } = require('./storage');
 
 async function main() {
+  clearUploads(); // old files belong to the previous run's database
   const db = await openDb();
   const ids = await seed(db);
   const app = createApp(db);
