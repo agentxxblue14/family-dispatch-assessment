@@ -7,7 +7,15 @@ const path = require('node:path');
 process.env.NODE_ENV = 'test';
 process.env.UPLOAD_DIR = path.join(os.tmpdir(), `fd-test-uploads-${process.pid}`);
 
+const test = require('node:test');
+
 const PASSWORD = 'Demo2026!';
+
+// Every database opened by makeApp is closed when the test file finishes.
+const openDbs = [];
+test.after(async () => {
+  for (const db of openDbs) await db.close();
+});
 
 // Opens a fresh database, seeds it and builds an app. Each call is fully independent.
 async function makeApp(options = {}) {
@@ -15,6 +23,7 @@ async function makeApp(options = {}) {
   const { seed } = require('../src/db/seed');
   const { createApp } = require('../src/app');
   const db = await openDb();
+  openDbs.push(db);
   const ids = await seed(db);
   const app = createApp(db, options);
   return { app, db, ids };

@@ -65,14 +65,17 @@ CREATE TABLE documents (
   FOREIGN KEY (uploaded_by, company_id) REFERENCES users(id, company_id)
 );
 
--- Blocked attempts, shown to the owner of the company whose user made the attempt.
+-- Blocked attempts (403 wrong role, 404 not yours or missing). Each row belongs to the company
+-- of the user who made the attempt, so its owner can see what their own staff tried.
 CREATE TABLE access_denials (
   id SERIAL PRIMARY KEY,
   company_id INT NOT NULL,
   user_id INT NOT NULL,
   method TEXT NOT NULL,
   path TEXT NOT NULL,
-  at TIMESTAMPTZ NOT NULL DEFAULT now()
+  status INT NOT NULL CHECK (status IN (403, 404)),
+  at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  FOREIGN KEY (user_id, company_id) REFERENCES users(id, company_id)
 );
 
 CREATE INDEX loads_company_driver ON loads (company_id, driver_id);
