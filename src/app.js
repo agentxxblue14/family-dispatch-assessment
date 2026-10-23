@@ -11,6 +11,7 @@ const { authRoutes } = require('./routes/auth');
 const { loadRoutes } = require('./routes/loads');
 const { fleetRoutes } = require('./routes/fleet');
 const { auditRoutes } = require('./routes/audit');
+const { documentRoutes } = require('./routes/documents');
 
 function createApp(db, { enforceRls = true } = {}) {
   const app = express();
@@ -54,7 +55,7 @@ function createApp(db, { enforceRls = true } = {}) {
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.use('/api', authRoutes());
   // Everything below needs a logged-in user; requireAuth also sets req.user and req.repo.
-  app.use('/api/loads', requireAuth, loadRoutes());
+  app.use('/api/loads', requireAuth, loadRoutes(), documentRoutes());
   app.use('/api/audit', requireAuth, auditRoutes());
   app.use('/api', requireAuth, fleetRoutes());
 
