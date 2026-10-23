@@ -6,7 +6,7 @@
 
 ## How I used it
 
-**Planning.** Before writing code I worked with Claude Code on a written build plan: stack, schema, the two-lock isolation design, permission table, API contract, threat model, test list and timeline. A separate Claude Code session reviewed that plan the way a CTO would, and the plan was revised. I made the main calls between the options it laid out, including two locks instead of one, Postgres (PGlite) instead of SQLite so Row Level Security was possible, 404 instead of 403 across companies, and no front-end framework. _[Judah: confirm these were your calls, or edit.]_
+**Planning.** Before writing code I worked with Claude Code on a written build plan: stack, schema, the two-lock isolation design, permission table, API contract, threat model, test list and timeline. A separate Claude Code session reviewed that plan the way a CTO would, and the plan was revised. The plan set out the main options with their trade-offs (one lock or two, SQLite or Postgres, 403 or 404 across companies, a framework or plain JavaScript). The reasons for each final choice are written up in ARCHITECTURE.md.
 
 **Building.** Claude Code wrote the code, tests and documentation, following the plan one phase at a time:
 
@@ -43,9 +43,9 @@ I did not take the AI's word that anything worked. Every claim in these docs com
 
 ## What I reviewed myself
 
-_[Judah: replace this paragraph with what you actually did, for example: "I read every file in src/, ran the app and logged in as each user, ran npm test and npm run security-test myself, and walked through repo.js, rls.sql and permissions.js line by line until I could explain them without notes."]_
+I logged in and used the app myself, including downloading a delivery document, and asked for changes where it was not good enough (see Building above). I chose to publish the repository privately first and make it public once these documents were final, and I had my submission messages checked against the brief before sending.
 
-I can walk through any file on a call: how a request gets its company, why both locks exist, how the permission table is used, and how each test proves what it claims.
+I'm happy to walk through any file on a call: how a request gets its company, why both locks exist, how the permission table is used, and how each test proves what it claims.
 
 ## Hiring-manager review: findings and changes
 
