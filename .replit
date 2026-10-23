@@ -1,5 +1,4 @@
-# Replit: press Run to start the app. Data lives in memory and resets on every start.
-modules = ["nodejs-20"]
+modules = ["nodejs-20", "web"]
 run = "npm start"
 
 [[ports]]
@@ -11,3 +10,6 @@ externalPort = 80
 # Reserved VM, or Autoscale with the maximum number of servers set to 1.
 [deployment]
 run = ["sh", "-c", "NODE_ENV=production TRUST_PROXY=1 node src/server.js"]
+
+[nix]
+channel = "stable-25_05"
