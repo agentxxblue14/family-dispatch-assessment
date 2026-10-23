@@ -20,4 +20,8 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      # Again as on Replit, where REPL_ID is set and the app trusts Replit's proxy by default.
+      - run: npm test
+        env:
+          REPL_ID: simulated
       - run: npm run security-test

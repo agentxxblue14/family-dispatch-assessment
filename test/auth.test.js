@@ -66,7 +66,8 @@ test('11th failed login in a row is rate limited with 429', async () => {
 
 // Review A finding 1: rotating a forged X-Forwarded-For header gave every guess a fresh limit.
 test('forged X-Forwarded-For does not reset the per-IP limit (50) when no proxy is trusted', async () => {
-  const { app: fresh } = await makeApp();
+  // State the premise: no proxy trusted. (On Replit the default trusts Replit's one proxy.)
+  const { app: fresh } = await makeApp({ trustProxy: 0 });
   const statuses = [];
   for (let i = 1; i <= 51; i++) {
     const res = await request(fresh)
