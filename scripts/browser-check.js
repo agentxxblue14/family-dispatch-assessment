@@ -38,7 +38,7 @@ const USERS = [
   { name: 'Miguel Cruz', role: 'Driver', company: 'Alpha Transport', refs: ['A-1001', 'A-1003'] },
   { name: 'Jordan Lee', role: 'Driver', company: 'Alpha Transport', refs: ['A-1002', 'A-1004'] },
   { name: 'Priya Shah', role: 'Owner', company: 'Beta Logistics', refs: BETA },
-  { name: 'Tom Hale', role: 'Dispatcher', company: 'Beta Logistics', refs: BETA },
+  { name: 'Tom Hale', role: 'Dispatcher', company: 'Beta Logistics', refs: BETA, reducedMotion: true },
   { name: 'Ana Silva', role: 'Driver', company: 'Beta Logistics', refs: ['B-2001', 'B-2003'] },
   { name: 'Ben Ward', role: 'Driver', company: 'Beta Logistics', refs: ['B-2002', 'B-2004'] },
 ];
@@ -78,12 +78,21 @@ async function waitForMessage(page, text) {
   await settled(page);
 }
 
+// Waits until count-ups and CSS animations have finished, so screenshots show the final state.
+async function motionDone(page) {
+  await page.waitForFunction(
+    () =>
+      !document.querySelector('[data-counting]') && document.getAnimations().every((a) => a.playState !== 'running'),
+  );
+}
+
 let currentUser = ''; // whose run the screenshots belong to
 
 async function shot(page, name, widths = [1440, 390]) {
   for (const width of widths) {
     await page.setViewport({ width, height: 900 });
     await new Promise((r) => setTimeout(r, 150));
+    await motionDone(page);
     // No sideways scrolling: the page must fit the screen width.
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     check(currentUser, scrollWidth <= width, `${name} fits ${width}px wide (page is ${scrollWidth}px)`);
@@ -99,6 +108,8 @@ async function checkUser(browser, base, u, first) {
   const context = await browser.createBrowserContext(); // fresh cookies per user
   const page = await context.newPage();
   await page.setViewport({ width: 1440, height: 900 });
+  // One user runs with "reduce motion" switched on, the way some people set their device.
+  if (u.reducedMotion) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   page.on('console', (m) => {
     if (m.type() === 'error' || m.type() === 'warn') consoleLog.push({ who: u.name, type: m.type(), text: m.text() });
   });
@@ -124,8 +135,45 @@ async function checkUser(browser, base, u, first) {
     check(u.name, same(refs, u.refs), `sees only own loads: ${refs.join(', ')}`);
     if (u.name === 'Miguel Cruz') await shot(page, 'driver-view');
   } else {
-    const wanted = ['Loads', 'Drivers', 'Trucks', 'Security check', ...(u.role === 'Owner' ? ['Blocked log'] : [])];
+    const wanted = [
+      'Overview',
+      'Loads',
+      'Drivers',
+      'Trucks',
+      'Security check',
+      ...(u.role === 'Owner' ? ['Blocked log'] : []),
+    ];
     check(u.name, same(tabs, wanted), `tabs: ${tabs.join(', ')}`);
+
+    // Overview: numbers, charts, and the chart filtering the table.
+    if (u.reducedMotion) {
+      const running = await page.evaluate(() => document.getAnimations().length);
+      check(u.name, running === 0, `reduced motion: ${running} animations on the Overview`);
+    }
+    await motionDone(page);
+    const kpis = await page.$$eval('.kpi', (n) =>
+      Object.fromEntries(
+        n.map((k) => [k.querySelector('.kpi-label').textContent, k.querySelector('.kpi-num').textContent]),
+      ),
+    );
+    check(
+      u.name,
+      kpis.Loads === '4' && kpis['In transit'] === '1' && kpis.Delivered === '1' && kpis['Need a POD'] === '1',
+      `overview numbers: ${JSON.stringify(kpis)}`,
+    );
+    const bars = await page.$$eval('.bar-row', (n) => n.length);
+    await (await page.$$('.bar-row'))[1].click(); // the Picked Up bar
+    const filtered = await page.$$eval('tbody tr', (n) => n.map((r) => r.textContent));
+    check(
+      u.name,
+      bars === 3 && filtered.length === 1 && filtered[0].includes('Picked Up'),
+      `status chart (${bars} bars) filters the table to ${filtered.length} Picked Up load`,
+    );
+    if (u.name === 'Dana Reyes') {
+      await clickText(page, '.chip-filter', 'All');
+      await shot(page, 'overview');
+    }
+    await openTab(page, 'Loads');
     const refs = await page.$$eval('tbody .ref', (n) => n.map((x) => x.textContent).sort());
     check(u.name, same(refs, u.refs), `loads table: ${refs.join(', ')}`);
     if (u.name === 'Dana Reyes') await shot(page, 'owner-dashboard');

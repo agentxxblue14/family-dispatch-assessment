@@ -19,6 +19,8 @@
 
 For each phase the test file was written first and run to see it fail, then the code was written until the tests passed. Each phase has its own commits, so the git history shows the order.
 
+After trying the first working version, I asked for a clearer UI, a realistic sample POD and a dashboard with motion. Claude Code pointed out that the brief says design is not the main grade, and I chose a restrained Overview with short, purposeful motion rather than heavy animation.
+
 **Independent review.** Fresh Claude Code sessions that had not written the code were used as reviewers:
 
 - **Security reviewer, round 1.** Attacked the running server: cross-company requests, id guessing, parameter tampering, upload tricks, session tricks, SQL injection. It found no way across companies or above a role. It found one real weakness: the login rate limit could be reset by forging the `X-Forwarded-For` header. Fixed, with two new tests.
@@ -35,7 +37,7 @@ I did not take the AI's word that anything worked. Every claim in these docs com
   - Breaking both locks made `npm run security-test` report 18 leaks and exit with an error.
 - **Exhaustive matrix.** Every user against every load and action (192 checks), with expected results written out by hand in the test instead of reusing the app's own permission function.
 - **Attack script against the real server.** `npm run security-test`: 32 cross-company attempts and a direct database check, 0 leaks.
-- **Browser check.** `npm run browser-check` drives headless Chrome as all 8 users: every screen, every Security check button (all BLOCKED), the workflow from the page, that no screen scrolls sideways at phone width, and the console. 62 of 62 checks passed (docs/BROWSER-CHECK.md).
+- **Browser check.** `npm run browser-check` drives headless Chrome as all 8 users: every screen, every Security check button (all BLOCKED), the workflow from the page, that no screen scrolls sideways at phone width, and the console. 73 of 73 checks passed (docs/BROWSER-CHECK.md).
 - **Two Node versions.** The suite passed on Node 24 and Node 20 locally. GitHub Actions is set up to run it on Node 20 and 22 on every push.
 - **Lint and formatting.** ESLint and Prettier are clean.
 

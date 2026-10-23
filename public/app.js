@@ -2,6 +2,8 @@
 // (who you are, which company, what you may see); this file only shows what the API returns.
 // All text goes in with textContent (via el()), never innerHTML, so data cannot inject HTML.
 import { api } from './api.js';
+import { el } from './dom.js';
+import { renderOverview } from './overview.js';
 
 const PASSWORD = 'Demo2026!';
 const SAMPLE_ACCOUNTS = {
@@ -31,26 +33,11 @@ const NEXT_LABEL = { Assigned: 'Mark Picked Up', 'Picked Up': 'Mark Delivered' }
 const ROLE_LABEL = { owner: 'Owner', dispatcher: 'Dispatcher', driver: 'Driver' };
 
 // message: { text, kind } where kind is 'ok' or 'error'. Shown once, after the next render.
-const state = { me: null, tab: null, selectedLoadId: null, message: null };
+// justMoved: { loadId, status } after a successful advance, so that step animates once.
+const state = { me: null, tab: null, selectedLoadId: null, message: null, justMoved: null };
 const root = document.getElementById('app');
 
 // ---------- small helpers ----------
-
-// Creates an element. Strings and numbers become text nodes, so nothing is ever parsed as HTML.
-function el(tag, attrs = {}, ...children) {
-  const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value === undefined || value === null || value === false) continue;
-    if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
-    else if (key === 'class') node.className = value;
-    else node.setAttribute(key, value === true ? '' : value);
-  }
-  for (const child of children.flat()) {
-    if (child === null || child === undefined || child === false) continue;
-    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
-  }
-  return node;
-}
 
 function pill(status) {
   return el('span', { class: `pill pill-${status.toLowerCase().replace(' ', '-')}` }, status);
@@ -79,18 +66,21 @@ function needsPod(load) {
 }
 
 // Three steps with a marker each. events (optional) add the time each step was reached.
-function stepper(status, events = []) {
+// The step a load has just moved to gets the "arrive" class, which animates once (CSS).
+function stepper(load, events = []) {
+  const status = load.status;
   // Delivered is the end: show every step as done, nothing still in progress.
   const last = status === STATUSES[STATUSES.length - 1];
   const at = last ? STATUSES.length : STATUSES.indexOf(status);
   const reachedAt = Object.fromEntries(events.map((e) => [e.toStatus, e.at]));
+  const moved = state.justMoved && state.justMoved.loadId === load.id ? state.justMoved.status : null;
   return el(
     'ol',
     { class: 'stepper', 'aria-label': `Status: ${status}` },
     STATUSES.map((s, i) =>
       el(
         'li',
-        { class: [i < at ? 'done' : '', i === at ? 'current' : ''].join(' ') },
+        { class: [i < at ? 'done' : '', i === at ? 'current' : '', s === moved ? 'arrive' : ''].join(' ') },
         el('span', { class: 'marker', 'aria-hidden': 'true' }),
         el('span', { class: 'step-label' }, s),
         reachedAt[s] ? el('span', { class: 'step-time' }, formatTime(reachedAt[s])) : null,
@@ -293,6 +283,7 @@ function tabsForRole(role) {
     ];
   }
   const tabs = [
+    ['overview', 'Overview'],
     ['loads', 'Loads'],
     ['drivers', 'Drivers'],
     ['trucks', 'Trucks'],
@@ -367,6 +358,7 @@ async function renderApp() {
   );
 
   const views = {
+    overview: () => renderOverview({ me: state.me, call, openLoad, pill, route, errorText }),
     loads: renderOfficeLoads,
     myloads: renderDriverLoads,
     drivers: renderDrivers,
@@ -376,9 +368,17 @@ async function renderApp() {
   };
   try {
     content.replaceChildren(...(await views[state.tab]()));
+    state.justMoved = null; // the move animation plays once only
   } catch (err) {
     if (err.message !== 'logged out') throw err;
   }
+}
+
+// Used by the Overview: jump to the Loads tab with this load open.
+function openLoad(id) {
+  state.tab = 'loads';
+  state.selectedLoadId = id;
+  renderApp();
 }
 
 async function logout() {
@@ -393,6 +393,7 @@ async function logout() {
 async function advance(load, button) {
   button.disabled = true; // no double clicks while the request runs
   const res = await call('POST', `/api/loads/${load.id}/advance`, { from: load.status });
+  state.justMoved = res.status === 200 ? { loadId: load.id, status: res.data.load.status } : null;
   state.message =
     res.status === 200
       ? { kind: 'ok', text: `${load.ref} moved to ${res.data.load.status}.` }
@@ -567,7 +568,7 @@ async function renderLoadDetail(id) {
       el('div', {}, el('dt', {}, 'Driver'), el('dd', {}, load.driver ? load.driver.name : 'Unassigned')),
       el('div', {}, el('dt', {}, 'Truck'), el('dd', {}, load.truck ? load.truck.unit : 'None')),
     ),
-    stepper(load.status, events),
+    stepper(load, events),
     el('div', { class: 'actions' }, nextButton(load, { wide: true })),
     el('h3', {}, 'Delivery document (POD)'),
     doc ? docCard(load.id, doc) : el('p', { class: 'doc-empty' }, 'No delivery document yet.'),
@@ -602,7 +603,7 @@ async function renderDriverLoads() {
           el('div', { class: 'detail-head' }, el('span', { class: 'ref' }, load.ref), pill(load.status)),
           el('p', { class: 'detail-route' }, route(load)),
           el('p', { class: 'muted' }, `Truck ${load.truck ? load.truck.unit : 'none'}`),
-          stepper(load.status),
+          stepper(load),
           el('div', { class: 'actions' }, nextButton(load, { wide: true })),
           load.hasDocument
             ? el(

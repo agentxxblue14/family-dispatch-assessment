@@ -184,6 +184,8 @@ Indexes lead with `company_id` (for example `loads (company_id, driver_id)`), be
 
 **Replit preview allowed to frame the app.** Helmet normally blocks all framing. The CSP `frame-ancestors` rule allows only this site and `replit.com`, so the Replit workspace preview pane works and every other site is still refused.
 
+**An Overview with restrained motion.** The Overview tab answers the daily questions (how many loads are where, who carries what, which deliveries still need a POD) with small charts drawn in plain SVG, so there is no chart library and no outside request, and the strict content security policy stays as it is. It reads only the same company-scoped endpoints as the other tabs, so it adds no new way to reach data. Motion is kept to changes worth noticing: counts, bars, the POD ring, and a load's step filling in after it moves. It is off for anyone whose device asks for reduced motion, and the browser check runs one user that way.
+
 **No front-end framework.** The page is one plain JavaScript file (about 700 lines, mostly small render functions) with no build step. The brief grades the backend, and anyone can read the page code without knowing a framework.
 
 ## Going to production

@@ -45,7 +45,7 @@ On Replit: open the project and press **Run**. Every start rebuilds the database
 
 ## What to try
 
-1. Log in as **Dana Reyes** (Alpha owner). Loads, Drivers and Trucks show Alpha data only.
+1. Log in as **Dana Reyes** (Alpha owner). The **Overview** shows Alpha's numbers, loads by status, workload by driver and POD status; click a bar to filter the table. Loads, Drivers and Trucks show Alpha data only.
 2. Click **A-1001**, press **Mark Picked Up**, upload any PDF, PNG or JPG as the POD, then press **Mark Delivered** and read the history ("Dana Reyes moved Assigned to Picked Up"). Try Mark Delivered on A-1003 first: the server refuses it until a POD is on file.
 3. Open **Security check** and press **Run all**. Each button sends a real request for Beta data straight to the API. Every one comes back BLOCKED.
 4. Open **Blocked log** to see those attempts recorded for the owner.
@@ -122,7 +122,7 @@ Coverage (`npm run test:coverage`) of every `src/` file the tests load, which is
 
 `npm run security-test`: **32 cross-company attempts, 0 leaks** (16 from Alpha against Beta, 16 from Beta against Alpha), plus a direct database check that no cross-company write landed. Full table in [docs/SECURITY-TEST.md](docs/SECURITY-TEST.md).
 
-`npm run browser-check`: **62 of 62 checks passed** for the 8 users, with no script errors in the browser console ([docs/BROWSER-CHECK.md](docs/BROWSER-CHECK.md), screenshots in `docs/screenshots/`).
+`npm run browser-check`: **73 of 73 checks passed** for the 8 users, with no script errors in the browser console ([docs/BROWSER-CHECK.md](docs/BROWSER-CHECK.md), screenshots in `docs/screenshots/`).
 
 GitHub Actions runs lint, formatting, the tests and the security script on Node 20 and 22 on every push (badge above). The browser check needs Chrome and runs locally.
 
@@ -144,7 +144,7 @@ src/
   routes/                auth, loads, fleet, documents, audit
   http/                  errors, input validation, JSON shapes
   storage.js             upload file checks and storage
-public/                  one page, plain JavaScript, no build step
+public/                  one page, plain JavaScript, no build step (app.js screens, overview.js dashboard, dom.js helpers)
 test/                    9 test files (node:test + supertest)
 scripts/security-test.js end-to-end cross-company attack script
 scripts/browser-check.js headless Chrome check of the UI as all 8 users

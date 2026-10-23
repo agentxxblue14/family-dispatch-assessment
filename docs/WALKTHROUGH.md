@@ -24,7 +24,11 @@ Hiding tabs is only the visible part. The server checks every request against on
 
 ## 3. Company dashboard
 
-The owner and dispatcher see their own company's loads with counts by status, plus the Drivers and Trucks tabs. Every query behind these screens filters by the company taken from the session, and Postgres Row Level Security filters again.
+The owner and dispatcher land on an **Overview**: counts (loads, in transit, delivered, needing a POD, and for the owner, blocked attempts), loads by status, workload by driver, and proof-of-delivery status, over a searchable load table. Clicking a status bar filters the table. Motion is short and only explains a change (numbers count up, bars grow in, a step fills in when a load moves), and it switches off completely for anyone whose device asks for reduced motion. The Loads, Drivers and Trucks tabs hold the working screens.
+
+![Overview](screenshots/overview-1440.png)
+
+The Loads tab: Every query behind these screens filters by the company taken from the session, and Postgres Row Level Security filters again.
 
 ![Owner dashboard](screenshots/owner-dashboard-1440.png)
 
@@ -80,4 +84,4 @@ The owner can then see those attempts in the **Blocked log**:
 
 ![Blocked log](screenshots/blocked-log-1440.png)
 
-The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected. And `npm run browser-check` drives Chrome through these screens as all 8 users: 62 of 62 checks passed ([BROWSER-CHECK.md](BROWSER-CHECK.md)).
+The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected. And `npm run browser-check` drives Chrome through these screens as all 8 users: 73 of 73 checks passed ([BROWSER-CHECK.md](BROWSER-CHECK.md)).
