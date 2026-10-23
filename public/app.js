@@ -66,7 +66,11 @@ function tracker(status) {
 
 function time(iso) {
   const d = new Date(iso);
-  return el('time', { datetime: iso }, d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }));
+  return el(
+    'time',
+    { datetime: iso },
+    d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+  );
 }
 
 function route(load) {
@@ -110,7 +114,13 @@ async function start() {
 function renderLogin(error = '') {
   document.body.className = '';
   const email = el('input', { id: 'email', type: 'email', name: 'email', autocomplete: 'username', required: true });
-  const password = el('input', { id: 'password', type: 'password', name: 'password', autocomplete: 'current-password', required: true });
+  const password = el('input', {
+    id: 'password',
+    type: 'password',
+    name: 'password',
+    autocomplete: 'current-password',
+    required: true,
+  });
   const errorLine = el('p', { class: 'error', role: 'alert' }, error);
 
   async function login(event) {
@@ -180,8 +190,17 @@ function renderLogin(error = '') {
 // ---------- logged-in shell ----------
 
 function tabsForRole(role) {
-  if (role === 'driver') return [['myloads', 'My loads'], ['security', 'Security check']];
-  const tabs = [['loads', 'Loads'], ['drivers', 'Drivers'], ['trucks', 'Trucks'], ['security', 'Security check']];
+  if (role === 'driver')
+    return [
+      ['myloads', 'My loads'],
+      ['security', 'Security check'],
+    ];
+  const tabs = [
+    ['loads', 'Loads'],
+    ['drivers', 'Drivers'],
+    ['trucks', 'Trucks'],
+    ['security', 'Security check'],
+  ];
   if (role === 'owner') tabs.push(['blocked', 'Blocked log']);
   return tabs;
 }
@@ -258,12 +277,18 @@ async function logout() {
 
 async function advance(load) {
   const res = await call('POST', `/api/loads/${load.id}/advance`);
-  state.message = res.status === 200 ? `${load.ref} moved to ${res.data.load.status}.` : `${load.ref}: ${errorText(res)}`;
+  state.message =
+    res.status === 200 ? `${load.ref} moved to ${res.data.load.status}.` : `${load.ref}: ${errorText(res)}`;
   renderApp();
 }
 
 function uploadForm(load) {
-  const input = el('input', { type: 'file', name: 'file', accept: '.pdf,.png,.jpg,.jpeg', 'aria-label': `POD file for ${load.ref}` });
+  const input = el('input', {
+    type: 'file',
+    name: 'file',
+    accept: '.pdf,.png,.jpg,.jpeg',
+    'aria-label': `POD file for ${load.ref}`,
+  });
   const button = el('button', { type: 'button' }, 'Upload POD');
   button.addEventListener('click', async () => {
     if (!input.files[0]) {
@@ -339,7 +364,17 @@ async function renderOfficeLoads() {
       el(
         'table',
         { class: 'responsive' },
-        el('thead', {}, el('tr', {}, ['Load', 'Route', 'Driver', 'Truck', 'Status', 'Next step', 'POD'].map((h) => el('th', { scope: 'col' }, h)))),
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            ['Load', 'Route', 'Driver', 'Truck', 'Status', 'Next step', 'POD'].map((h) =>
+              el('th', { scope: 'col' }, h),
+            ),
+          ),
+        ),
         el('tbody', {}, rows),
       ),
     ),
@@ -374,7 +409,13 @@ async function renderLoadDetail(id) {
     el('div', { class: 'actions' }, nextButton(load)),
     el('h3', {}, 'Delivery document (POD)'),
     doc
-      ? el('p', {}, el('a', { href: `/api/loads/${load.id}/document` }, doc.filename), ` · uploaded by ${doc.uploadedBy} · `, time(doc.uploadedAt))
+      ? el(
+          'p',
+          {},
+          el('a', { href: `/api/loads/${load.id}/document` }, doc.filename),
+          ` · uploaded by ${doc.uploadedBy} · `,
+          time(doc.uploadedAt),
+        )
       : el('p', { class: 'muted' }, 'No document yet.'),
     uploadForm(load),
     el('h3', {}, 'History'),
@@ -424,7 +465,15 @@ async function renderDrivers() {
       el(
         'table',
         { class: 'responsive' },
-        el('thead', {}, el('tr', {}, ['Driver', 'Email', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)))),
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            ['Driver', 'Email', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)),
+          ),
+        ),
         el(
           'tbody',
           {},
@@ -453,7 +502,15 @@ async function renderTrucks() {
       el(
         'table',
         { class: 'responsive' },
-        el('thead', {}, el('tr', {}, ['Truck', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)))),
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            ['Truck', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)),
+          ),
+        ),
         el(
           'tbody',
           {},
@@ -476,7 +533,11 @@ async function renderTrucks() {
 async function renderBlocked() {
   const res = await call('GET', '/api/audit/denials');
   if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
-  const intro = el('p', { class: 'muted' }, 'Requests from people in your company that the server refused. Try the Security check tab, then come back here.');
+  const intro = el(
+    'p',
+    { class: 'muted' },
+    'Requests from people in your company that the server refused. Try the Security check tab, then come back here.',
+  );
   if (!res.data.length) return [intro, el('p', {}, 'No blocked attempts yet.')];
   return [
     intro,
@@ -486,7 +547,15 @@ async function renderBlocked() {
       el(
         'table',
         { class: 'responsive' },
-        el('thead', {}, el('tr', {}, ['When', 'Who', 'Request', 'Answer'].map((h) => el('th', { scope: 'col' }, h)))),
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            ['When', 'Who', 'Request', 'Answer'].map((h) => el('th', { scope: 'col' }, h)),
+          ),
+        ),
         el(
           'tbody',
           {},
@@ -524,7 +593,12 @@ function attacksFor(me, ownLoads) {
   const attacks = [
     { label: `Open a ${other.name} load`, method: 'GET', path: `/api/loads/${target}`, blocked: refused },
     { label: 'Move it to the next status', method: 'POST', path: `/api/loads/${target}/advance`, blocked: refused },
-    { label: 'Download its delivery document', method: 'GET', path: `/api/loads/${other.podLoadId}/document`, blocked: refused },
+    {
+      label: 'Download its delivery document',
+      method: 'GET',
+      path: `/api/loads/${other.podLoadId}/document`,
+      blocked: refused,
+    },
     {
       label: `Send company_id=${otherId} (${other.name}) in the URL`,
       method: 'GET',
@@ -537,10 +611,21 @@ function attacksFor(me, ownLoads) {
     const mine = ownLoads.map((l) => l.id);
     const coworker = own.loadIds.find((id) => !mine.includes(id));
     if (coworker) {
-      attacks.push({ label: "Open another driver's load", method: 'GET', path: `/api/loads/${coworker}`, blocked: refused });
+      attacks.push({
+        label: "Open another driver's load",
+        method: 'GET',
+        path: `/api/loads/${coworker}`,
+        blocked: refused,
+      });
     }
   } else {
-    attacks.push({ label: 'Upload a file to their load', method: 'POST', path: `/api/loads/${target}/document`, blocked: refused, upload: true });
+    attacks.push({
+      label: 'Upload a file to their load',
+      method: 'POST',
+      path: `/api/loads/${target}/document`,
+      blocked: refused,
+      upload: true,
+    });
   }
   return attacks;
 }
@@ -564,7 +649,16 @@ async function renderSecurity() {
       el(
         'div',
         { class: 'result' },
-        el('div', { class: 'line' }, el('strong', {}, attack.label), el('span', { class: `badge ${blocked ? 'badge-blocked' : 'badge-leak'}` }, blocked ? attack.blockedText || 'BLOCKED' : 'ALLOWED')),
+        el(
+          'div',
+          { class: 'line' },
+          el('strong', {}, attack.label),
+          el(
+            'span',
+            { class: `badge ${blocked ? 'badge-blocked' : 'badge-leak'}` },
+            blocked ? attack.blockedText || 'BLOCKED' : 'ALLOWED',
+          ),
+        ),
         el('div', { class: 'line' }, el('span', {}, `${attack.method} ${attack.path}`)),
         el('pre', {}, `${res.status}  ${shownBody}`),
       ),
@@ -577,7 +671,11 @@ async function renderSecurity() {
 
   return [
     el('h1', {}, 'Security check'),
-    el('p', {}, `You are ${me.company.name} · ${ROLE_LABEL[me.role]}. Each button sends a real request for data you should not get, straight to the server.`),
+    el(
+      'p',
+      {},
+      `You are ${me.company.name} · ${ROLE_LABEL[me.role]}. Each button sends a real request for data you should not get, straight to the server.`,
+    ),
     el(
       'div',
       { class: 'attack-buttons' },

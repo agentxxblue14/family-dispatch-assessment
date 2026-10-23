@@ -63,5 +63,4 @@ function authRoutes() {
   return router;
 }
 
-
 module.exports = { authRoutes };

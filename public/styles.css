@@ -31,7 +31,12 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font:
+    15px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }
 
 .stripe {
@@ -344,17 +349,25 @@ tr.selected td {
   margin: 6px 0 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font: 13px/1.45 ui-monospace, Consolas, monospace;
+  font:
+    13px/1.45 ui-monospace,
+    Consolas,
+    monospace;
 }
 .result .line {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
-  font: 13px/1.45 ui-monospace, Consolas, monospace;
+  font:
+    13px/1.45 ui-monospace,
+    Consolas,
+    monospace;
 }
 .badge {
-  font: 700 12px/1 system-ui, sans-serif;
+  font:
+    700 12px/1 system-ui,
+    sans-serif;
   padding: 5px 8px;
   border-radius: 4px;
   letter-spacing: 0.03em;

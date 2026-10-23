@@ -10,7 +10,7 @@ export async function api(method, path, body) {
   }
   const res = await fetch(path, options);
   const text = await res.text();
-  let data = null;
+  let data;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {

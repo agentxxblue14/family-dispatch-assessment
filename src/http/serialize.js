@@ -34,7 +34,15 @@ function toUserJson(user) {
 }
 
 function toDenialJson(row) {
-  return { id: row.id, method: row.method, path: row.path, status: row.status, user: row.user_name, role: row.user_role, at: row.at };
+  return {
+    id: row.id,
+    method: row.method,
+    path: row.path,
+    status: row.status,
+    user: row.user_name,
+    role: row.user_role,
+    at: row.at,
+  };
 }
 
 module.exports = { toLoadJson, toEventJson, toDocJson, toUserJson, toDenialJson };

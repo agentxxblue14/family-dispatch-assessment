@@ -35,9 +35,10 @@ test('update of other company row changes nothing', async () => {
 test('insert into other company is rejected', async () => {
   await assert.rejects(
     withTenant(db, ids.companies.alpha, (tx) =>
-      tx.query("INSERT INTO access_denials (company_id, user_id, method, path, status) VALUES ($1, 1, 'GET', '/x', 404)", [
-        ids.companies.beta,
-      ]),
+      tx.query(
+        "INSERT INTO access_denials (company_id, user_id, method, path, status) VALUES ($1, 1, 'GET', '/x', 404)",
+        [ids.companies.beta],
+      ),
     ),
     /row-level security/,
   );

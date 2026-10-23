@@ -55,7 +55,9 @@ test('logout ends the session', async () => {
 test('11th failed login in a row is rate limited with 429', async () => {
   const { app: fresh } = await makeApp();
   for (let i = 0; i < 10; i++) {
-    const res = await request(fresh).post('/api/login').send({ email: 'owner@beta.test', password: 'guess' + i });
+    const res = await request(fresh)
+      .post('/api/login')
+      .send({ email: 'owner@beta.test', password: 'guess' + i });
     assert.equal(res.status, 401);
   }
   const blocked = await request(fresh).post('/api/login').send({ email: 'owner@beta.test', password: PASSWORD });
@@ -122,4 +124,15 @@ test('security headers are set (helmet)', async () => {
   assert.equal(res.headers['x-content-type-options'], 'nosniff');
   assert.match(res.headers['content-security-policy'], /default-src 'self'/);
   assert.equal(res.headers['x-powered-by'], undefined);
+});
+
+test('broken JSON is 400 and an oversized body is 413, with no internals leaked', async () => {
+  const bad = await request(app).post('/api/login').set('Content-Type', 'application/json').send('{"email":');
+  assert.equal(bad.status, 400);
+  assert.deepEqual(bad.body, { error: 'Invalid input' });
+  const huge = await request(app)
+    .post('/api/login')
+    .send({ email: 'owner@alpha.test', password: 'x'.repeat(30 * 1024) });
+  assert.equal(huge.status, 413);
+  assert.deepEqual(huge.body, { error: 'Invalid input' });
 });

@@ -8,9 +8,10 @@ async function main() {
   const db = await openDb();
   const ids = await seed(db);
   const app = createApp(db);
+  const loadIds = Object.entries(ids.loads).map(([ref, id]) => `${ref}=${id}`);
   app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`Family Dispatch prototype running on http://localhost:${config.PORT}`);
-    console.log(`Seeded loads: ${Object.entries(ids.loads).map(([ref, id]) => `${ref}=${id}`).join(' ')}`);
+    console.log(`Seeded loads: ${loadIds.join(' ')}`);
   });
 }
 

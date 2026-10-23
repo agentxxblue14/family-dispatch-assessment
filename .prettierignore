@@ -1,0 +1,6 @@
+node_modules/
+coverage/
+uploads/
+docs/screenshots/
+package-lock.json
+*.md

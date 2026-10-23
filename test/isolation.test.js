@@ -66,7 +66,9 @@ test('company_id sent in the query, body or a header is ignored', async () => {
   const trucks = await alpha.get(`/api/trucks?company_id=${beta}`);
   assert.deepEqual(trucks.body.map((t) => t.unit).sort(), ['T-101', 'T-102']);
 
-  const foreign = await alpha.get(`/api/loads/${freshIds.loads['B-2001']}?company_id=${beta}`).set('X-Company-Id', beta);
+  const foreign = await alpha
+    .get(`/api/loads/${freshIds.loads['B-2001']}?company_id=${beta}`)
+    .set('X-Company-Id', beta);
   assert.equal(foreign.status, 404);
 
   // Advancing an Alpha load with a Beta company_id in the body moves the Alpha load only.
@@ -75,7 +77,10 @@ test('company_id sent in the query, body or a header is ignored', async () => {
   assert.equal(moved.body.load.ref, 'A-1001');
   const betaOwner = await agentFor(fresh, 'owner@beta.test');
   const betaLoads = await betaOwner.get('/api/loads');
-  assert.deepEqual(betaLoads.body.map((l) => l.status), ['Assigned', 'Delivered', 'Picked Up', 'Assigned']);
+  assert.deepEqual(
+    betaLoads.body.map((l) => l.status),
+    ['Assigned', 'Delivered', 'Picked Up', 'Assigned'],
+  );
 });
 
 test('SQL injection in the id is rejected as bad input (400)', async () => {
