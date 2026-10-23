@@ -36,6 +36,7 @@ const ROLE_LABEL = { owner: 'Owner', dispatcher: 'Dispatcher', driver: 'Driver' 
 // justMoved: { loadId, status } after a successful advance, so that step animates once.
 const state = { me: null, tab: null, selectedLoadId: null, message: null, justMoved: null };
 const root = document.getElementById('app');
+const bar = document.getElementById('bar');
 
 // ---------- small helpers ----------
 
@@ -150,6 +151,7 @@ async function start() {
 
 function renderLogin(error = '') {
   document.body.className = 'login';
+  bar.replaceChildren(); // no top bar before login
   const email = el('input', { id: 'email', type: 'email', name: 'email', autocomplete: 'username', required: true });
   const password = el('input', {
     id: 'password',
@@ -218,7 +220,8 @@ function renderLogin(error = '') {
         'section',
         { class: 'intro' },
         el('p', { class: 'eyebrow' }, 'Family Dispatch · assessment prototype'),
-        el('h1', {}, 'Two trucking companies. One app. Zero shared data.'),
+        // The last phrase blends Alpha's navy into Beta's teal: two companies, one app.
+        el('h1', {}, 'Two trucking companies. One app. ', el('span', { class: 'gradient-text' }, 'Zero shared data.')),
         el(
           'p',
           { class: 'lead' },
@@ -308,9 +311,10 @@ async function renderApp() {
   );
   state.message = null;
 
-  root.replaceChildren(
+  // The top bar lives outside <main> so it can span the full width and stay pinned while scrolling.
+  bar.replaceChildren(
     el(
-      'header',
+      'div',
       { class: 'appbar' },
       el(
         'div',
@@ -353,9 +357,8 @@ async function renderApp() {
         ),
       ),
     ),
-    message,
-    content,
   );
+  root.replaceChildren(message, content);
 
   const views = {
     overview: () => renderOverview({ me: state.me, call, openLoad, pill, route, errorText }),
@@ -521,8 +524,12 @@ async function renderOfficeLoads() {
         ),
       ),
       el('td', { 'data-label': 'Route' }, route(load)),
-      el('td', { 'data-label': 'Driver', class: 'nowrap' }, load.driver ? load.driver.name : 'Unassigned'),
-      el('td', { 'data-label': 'Truck', class: 'num' }, load.truck ? load.truck.unit : 'None'),
+      el(
+        'td',
+        { 'data-label': 'Driver', class: 'nowrap' },
+        load.driver ? load.driver.name : 'Unassigned',
+        el('span', { class: 'truck-line num' }, load.truck ? `Truck ${load.truck.unit}` : 'No truck'),
+      ),
       el('td', { 'data-label': 'Status' }, pill(load.status)),
       el('td', { 'data-label': 'Next step' }, nextButton(load)),
     ),
@@ -542,11 +549,7 @@ async function renderOfficeLoads() {
     el(
       'div',
       { class: 'loads-layout' },
-      el(
-        'div',
-        { class: 'card flush' },
-        table(['Load', 'Route', 'Driver', 'Truck', 'Status', 'Next step'], rows, 'Loads'),
-      ),
+      el('div', { class: 'card flush' }, table(['Load', 'Route', 'Driver', 'Status', 'Next step'], rows, 'Loads')),
       panel,
     ),
   ];

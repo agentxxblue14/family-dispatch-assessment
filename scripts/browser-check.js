@@ -91,6 +91,7 @@ let currentUser = ''; // whose run the screenshots belong to
 async function shot(page, name, widths = [1440, 390]) {
   for (const width of widths) {
     await page.setViewport({ width, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0)); // the pinned top bar must sit at the top
     await new Promise((r) => setTimeout(r, 150));
     await motionDone(page);
     // No sideways scrolling: the page must fit the screen width.

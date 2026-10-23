@@ -206,13 +206,13 @@ function statusChart(loads, onPick) {
           onkeydown: (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), pick()),
         },
         svg('text', { x: 0, y: y + 13, class: 'chart-label' }, status),
-        svg('rect', { x: 86, y, width: 190, height: 18, rx: 4, class: 'track' }),
+        svg('rect', { x: 86, y, width: 190, height: 18, rx: 9, class: 'track' }),
         svg('rect', {
           x: 86,
           y,
           width: w,
           height: 18,
-          rx: 4,
+          rx: 9,
           class: `bar bar-${KEY[status]} grow`,
           style: `animation-delay: ${i * 90}ms`,
         }),
@@ -290,6 +290,17 @@ function podChart(loads, needsPod, openLoad) {
       role: 'img',
       'aria-label': `${withPod} of ${delivered.length} delivered loads have a POD`,
     },
+    // Green-to-teal gradient for the ring stroke (styled in CSS as url(#ring-grad)).
+    svg(
+      'defs',
+      {},
+      svg(
+        'linearGradient',
+        { id: 'ring-grad', x1: '0', y1: '0', x2: '1', y2: '1' },
+        svg('stop', { offset: '0%', 'stop-color': '#34c759' }),
+        svg('stop', { offset: '100%', 'stop-color': '#0f9d8a' }),
+      ),
+    ),
     svg('circle', { cx: 55, cy: 55, r, class: 'ring-track' }),
     svg('circle', {
       cx: 55,
