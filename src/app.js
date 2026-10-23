@@ -13,14 +13,15 @@ const { fleetRoutes } = require('./routes/fleet');
 const { auditRoutes } = require('./routes/audit');
 const { documentRoutes } = require('./routes/documents');
 
-function createApp(db, { enforceRls = true } = {}) {
+function createApp(db, { enforceRls = true, trustProxy = config.TRUST_PROXY } = {}) {
   const app = express();
   app.locals.db = db;
   app.locals.enforceRls = enforceRls;
 
-  // Replit serves the app through a TLS proxy. Trusting one hop lets secure cookies work and
-  // gives the rate limiter the real client IP instead of the proxy's.
-  app.set('trust proxy', 1);
+  // On Replit the app sits behind one TLS proxy: trusting that hop lets secure cookies work and
+  // gives the rate limiter the real client IP. Run directly (trustProxy 0), X-Forwarded-For is
+  // ignored, so nobody can pick their own IP to dodge the login limit (review A, finding 1).
+  app.set('trust proxy', trustProxy);
   app.disable('x-powered-by');
 
   app.use(

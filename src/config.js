@@ -10,4 +10,7 @@ module.exports = {
   MAX_UPLOAD_BYTES: 5 * 1024 * 1024,
   LOGIN_MAX_FAILURES: 10,
   LOGIN_WINDOW_MS: 15 * 60 * 1000,
+  // How many proxy hops to trust for the client IP. 0 = trust none, so a forged X-Forwarded-For
+  // header is ignored. Replit (REPL_ID is set there) serves the app through one TLS proxy.
+  TRUST_PROXY: process.env.TRUST_PROXY !== undefined ? Number(process.env.TRUST_PROXY) : process.env.REPL_ID ? 1 : 0,
 };

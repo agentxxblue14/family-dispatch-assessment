@@ -26,7 +26,20 @@ function authRoutes() {
     message: { error: 'Too many login attempts. Try again in 15 minutes.' },
   });
 
-  router.post('/login', loginLimiter, async (req, res) => {
+  // Second limit per account (email), so guessing one account's password from many IPs is
+  // also stopped. Trade-off: someone can lock an account out for 15 minutes; acceptable for
+  // a demo, and production would add a CAPTCHA or email unlock instead.
+  const accountLimiter = rateLimit({
+    windowMs: config.LOGIN_WINDOW_MS,
+    limit: config.LOGIN_MAX_FAILURES,
+    skipSuccessfulRequests: true,
+    keyGenerator: (req) => `email:${String(req.body?.email || '').toLowerCase()}`,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+  });
+
+  router.post('/login', loginLimiter, accountLimiter, async (req, res) => {
     const { email, password } = loginBody.parse(req.body);
     const user = await findUserForLogin(req.app.locals.db, email);
     const ok = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);

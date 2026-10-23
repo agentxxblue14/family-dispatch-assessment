@@ -62,6 +62,43 @@ test('11th failed login in a row is rate limited with 429', async () => {
   assert.equal(blocked.status, 429);
 });
 
+// Review A finding 1: rotating a forged X-Forwarded-For header gave every guess a fresh limit.
+test('forged X-Forwarded-For does not reset the login limit when no proxy is trusted', async () => {
+  const { app: fresh } = await makeApp();
+  const statuses = [];
+  for (let i = 1; i <= 11; i++) {
+    const res = await request(fresh)
+      .post('/api/login')
+      .set('X-Forwarded-For', `203.0.113.${i}`)
+      .send({ email: `nobody${i}@alpha.test`, password: 'guess' });
+    statuses.push(res.status);
+  }
+  assert.equal(statuses[10], 429, statuses.join(' '));
+});
+
+test('one account is limited to 10 failures even when every guess comes from a new IP', async () => {
+  // trustProxy: 1 is the Replit setting, where each X-Forwarded-For really is a different client.
+  const { app: fresh } = await makeApp({ trustProxy: 1 });
+  for (let i = 1; i <= 10; i++) {
+    const res = await request(fresh)
+      .post('/api/login')
+      .set('X-Forwarded-For', `198.51.100.${i}`)
+      .send({ email: 'owner@alpha.test', password: 'guess' + i });
+    assert.equal(res.status, 401);
+  }
+  const blocked = await request(fresh)
+    .post('/api/login')
+    .set('X-Forwarded-For', '198.51.100.99')
+    .send({ email: 'OWNER@alpha.test', password: PASSWORD });
+  assert.equal(blocked.status, 429);
+  // A different account from a new IP is not affected.
+  const other = await request(fresh)
+    .post('/api/login')
+    .set('X-Forwarded-For', '198.51.100.100')
+    .send({ email: 'owner@beta.test', password: PASSWORD });
+  assert.equal(other.status, 200);
+});
+
 test('session id changes at login (no session fixation)', async () => {
   const agent = request.agent(app);
   const first = await agent.post('/api/login').send({ email: 'driver1@alpha.test', password: PASSWORD });
