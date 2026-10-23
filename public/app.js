@@ -497,7 +497,7 @@ async function renderBlocked() {
               el('td', { 'data-label': 'When' }, time(d.at)),
               el('td', { 'data-label': 'Who' }, `${d.user} (${ROLE_LABEL[d.role]})`),
               el('td', { 'data-label': 'Request', class: 'num' }, `${d.method} ${d.path}`),
-              el('td', { 'data-label': 'Answer' }, d.status === 403 ? '403 wrong role' : '404 not yours'),
+              el('td', { 'data-label': 'Answer' }, d.status === 403 ? '403 wrong role' : '404 not found'),
             ),
           ),
         ),

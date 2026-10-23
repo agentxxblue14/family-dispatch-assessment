@@ -299,6 +299,12 @@ tr.selected td {
   padding-left: 18px;
   margin: 0;
 }
+.detail .actions {
+  margin: 4px 0 16px;
+}
+.detail h3 {
+  margin-top: 16px;
+}
 .upload {
   display: flex;
   flex-wrap: wrap;
@@ -311,7 +317,8 @@ tr.selected td {
 .load-card .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   margin-top: 8px;
 }
 .load-card .actions button,
@@ -397,12 +404,16 @@ tr.selected td {
   }
   table.responsive td {
     border: none;
-    padding: 6px 12px;
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    min-height: 40px;
   }
   table.responsive td::before {
     content: attr(data-label);
-    display: block;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--ink-2);
   }
   table {
