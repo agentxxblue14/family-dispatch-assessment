@@ -1,0 +1,36 @@
+{
+  "name": "family-dispatch-assessment",
+  "version": "1.0.0",
+  "description": "Multi-tenant trucking dispatch prototype: two companies, three roles, tenant isolation enforced by the server and the database.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "security-test": "node scripts/security-test.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.5.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "supertest": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "private": true
+}

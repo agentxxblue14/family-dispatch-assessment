@@ -1,0 +1,38 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 428 >>
+stream
+BT /F1 18 Tf 72 720 Td (PROOF OF DELIVERY (SAMPLE)) Tj ET
+BT /F1 12 Tf 72 694 Td (Company: Alpha Transport) Tj ET
+BT /F1 12 Tf 72 668 Td (Load: A-1002) Tj ET
+BT /F1 12 Tf 72 642 Td (Route: Austin TX to Houston TX) Tj ET
+BT /F1 12 Tf 72 616 Td (Driver: Jordan Lee) Tj ET
+BT /F1 12 Tf 72 590 Td (Received in good condition. Signed: J. Doe) Tj ET
+BT /F1 12 Tf 72 564 Td (Fictional sample document for a technical assessment.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000720 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+790
+%%EOF
