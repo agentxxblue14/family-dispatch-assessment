@@ -2,3 +2,9 @@ node_modules/
 uploads/
 coverage/
 .env
+
+# Private planning notes, never published
+PLAN.md
+PROMPT.md
+BRIEF.md
+private/
