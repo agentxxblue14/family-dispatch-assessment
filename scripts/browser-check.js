@@ -78,10 +78,15 @@ async function waitForMessage(page, text) {
   await settled(page);
 }
 
+let currentUser = ''; // whose run the screenshots belong to
+
 async function shot(page, name, widths = [1440, 390]) {
   for (const width of widths) {
     await page.setViewport({ width, height: 900 });
     await new Promise((r) => setTimeout(r, 150));
+    // No sideways scrolling: the page must fit the screen width.
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    check(currentUser, scrollWidth <= width, `${name} fits ${width}px wide (page is ${scrollWidth}px)`);
     await page.screenshot({ path: path.join(SHOTS, `${name}-${width}.png`), fullPage: true });
   }
   await page.setViewport({ width: 1440, height: 900 });
@@ -90,6 +95,7 @@ async function shot(page, name, widths = [1440, 390]) {
 // ---------- one user ----------
 
 async function checkUser(browser, base, u, first) {
+  currentUser = u.name;
   const context = await browser.createBrowserContext(); // fresh cookies per user
   const page = await context.newPage();
   await page.setViewport({ width: 1440, height: 900 });

@@ -28,7 +28,7 @@ Password for every account: `Demo2026!` (the login page also lists them; click a
 | Beta Logistics | Ana Silva | driver1@beta.test | Driver |
 | Beta Logistics | Ben Ward | driver2@beta.test | Driver |
 
-Sample data, the same on every start: Alpha loads A-1001 to A-1004 have ids 1 to 4, Beta loads B-2001 to B-2004 have ids 5 to 8. A-1002 and B-2002 are Delivered and already have a POD.
+Sample data, the same on every start: Alpha loads A-1001 to A-1004 have ids 1 to 4, Beta loads B-2001 to B-2004 have ids 5 to 8. A-1002 and B-2002 are Delivered and already have a POD: a filled-in proof-of-delivery form (shipper, consignee, freight, signatures), clearly marked as a fictional sample.
 
 ## Run it
 
@@ -122,7 +122,7 @@ Coverage (`npm run test:coverage`) of every `src/` file the tests load, which is
 
 `npm run security-test`: **32 cross-company attempts, 0 leaks** (16 from Alpha against Beta, 16 from Beta against Alpha), plus a direct database check that no cross-company write landed. Full table in [docs/SECURITY-TEST.md](docs/SECURITY-TEST.md).
 
-`npm run browser-check`: **49 of 49 checks passed** for the 8 users, with no script errors in the browser console ([docs/BROWSER-CHECK.md](docs/BROWSER-CHECK.md), screenshots in `docs/screenshots/`).
+`npm run browser-check`: **62 of 62 checks passed** for the 8 users, with no script errors in the browser console ([docs/BROWSER-CHECK.md](docs/BROWSER-CHECK.md), screenshots in `docs/screenshots/`).
 
 GitHub Actions runs lint, formatting, the tests and the security script on Node 20 and 22 on every push (badge above). The browser check needs Chrome and runs locally.
 
@@ -148,6 +148,7 @@ public/                  one page, plain JavaScript, no build step
 test/                    9 test files (node:test + supertest)
 scripts/security-test.js end-to-end cross-company attack script
 scripts/browser-check.js headless Chrome check of the UI as all 8 users
+scripts/make-sample-pods.js builds the two fictional proof-of-delivery PDFs in seed-files/
 docs/                    architecture, security test, walkthrough, AI disclosure, screenshots
 ```
 

@@ -35,7 +35,7 @@ I did not take the AI's word that anything worked. Every claim in these docs com
   - Breaking both locks made `npm run security-test` report 18 leaks and exit with an error.
 - **Exhaustive matrix.** Every user against every load and action (192 checks), with expected results written out by hand in the test instead of reusing the app's own permission function.
 - **Attack script against the real server.** `npm run security-test`: 32 cross-company attempts and a direct database check, 0 leaks.
-- **Browser check.** `npm run browser-check` drives headless Chrome as all 8 users: every screen, every Security check button (all BLOCKED), the workflow from the page, and the console. 49 of 49 checks passed (docs/BROWSER-CHECK.md).
+- **Browser check.** `npm run browser-check` drives headless Chrome as all 8 users: every screen, every Security check button (all BLOCKED), the workflow from the page, that no screen scrolls sideways at phone width, and the console. 62 of 62 checks passed (docs/BROWSER-CHECK.md).
 - **Two Node versions.** The suite passed on Node 24 and Node 20 locally. GitHub Actions is set up to run it on Node 20 and 22 on every push.
 - **Lint and formatting.** ESLint and Prettier are clean.
 

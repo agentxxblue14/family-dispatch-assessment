@@ -30,7 +30,8 @@ const STATUSES = ['Assigned', 'Picked Up', 'Delivered'];
 const NEXT_LABEL = { Assigned: 'Mark Picked Up', 'Picked Up': 'Mark Delivered' };
 const ROLE_LABEL = { owner: 'Owner', dispatcher: 'Dispatcher', driver: 'Driver' };
 
-const state = { me: null, tab: null, selectedLoadId: null, message: '' };
+// message: { text, kind } where kind is 'ok' or 'error'. Shown once, after the next render.
+const state = { me: null, tab: null, selectedLoadId: null, message: null };
 const root = document.getElementById('app');
 
 // ---------- small helpers ----------
@@ -55,26 +56,47 @@ function pill(status) {
   return el('span', { class: `pill pill-${status.toLowerCase().replace(' ', '-')}` }, status);
 }
 
-function tracker(status) {
-  const at = STATUSES.indexOf(status);
-  return el(
-    'ol',
-    { class: 'tracker', 'aria-label': `Status: ${status}` },
-    STATUSES.map((s, i) => el('li', { class: [i <= at ? 'done' : '', i === at ? 'current' : ''].join(' ') }, s)),
-  );
+function formatTime(iso) {
+  return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function time(iso) {
-  const d = new Date(iso);
-  return el(
-    'time',
-    { datetime: iso },
-    d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
-  );
+  return el('time', { datetime: iso }, formatTime(iso));
 }
 
 function route(load) {
-  return `${load.origin} > ${load.destination}`;
+  return el(
+    'span',
+    { class: 'route' },
+    load.origin,
+    el('span', { class: 'arrow', 'aria-hidden': 'true' }, ' → '),
+    load.destination,
+  );
+}
+
+function needsPod(load) {
+  return load.status === 'Picked Up' && !load.hasDocument;
+}
+
+// Three steps with a marker each. events (optional) add the time each step was reached.
+function stepper(status, events = []) {
+  // Delivered is the end: show every step as done, nothing still in progress.
+  const last = status === STATUSES[STATUSES.length - 1];
+  const at = last ? STATUSES.length : STATUSES.indexOf(status);
+  const reachedAt = Object.fromEntries(events.map((e) => [e.toStatus, e.at]));
+  return el(
+    'ol',
+    { class: 'stepper', 'aria-label': `Status: ${status}` },
+    STATUSES.map((s, i) =>
+      el(
+        'li',
+        { class: [i < at ? 'done' : '', i === at ? 'current' : ''].join(' ') },
+        el('span', { class: 'marker', 'aria-hidden': 'true' }),
+        el('span', { class: 'step-label' }, s),
+        reachedAt[s] ? el('span', { class: 'step-time' }, formatTime(reachedAt[s])) : null,
+      ),
+    ),
+  );
 }
 
 // Shared handling for error answers from the API.
@@ -96,6 +118,31 @@ async function call(method, path, body) {
   return res;
 }
 
+function table(headers, rows, label) {
+  return el(
+    'div',
+    { class: 'table-wrap' },
+    el(
+      'table',
+      { class: 'responsive', 'aria-label': label },
+      el(
+        'thead',
+        {},
+        el(
+          'tr',
+          {},
+          headers.map((h) => el('th', { scope: 'col' }, h)),
+        ),
+      ),
+      el('tbody', {}, rows),
+    ),
+  );
+}
+
+function notice(res) {
+  return [el('p', { class: 'banner error' }, errorText(res))];
+}
+
 // ---------- start ----------
 
 async function start() {
@@ -112,7 +159,7 @@ async function start() {
 // ---------- login ----------
 
 function renderLogin(error = '') {
-  document.body.className = '';
+  document.body.className = 'login';
   const email = el('input', { id: 'email', type: 'email', name: 'email', autocomplete: 'username', required: true });
   const password = el('input', {
     id: 'password',
@@ -131,7 +178,7 @@ function renderLogin(error = '') {
       state.me = res.data.user;
       state.tab = defaultTab();
       state.selectedLoadId = null;
-      state.message = '';
+      state.message = null;
       renderApp();
     } else if (res.status === 429) {
       errorLine.textContent = res.data.error;
@@ -143,7 +190,7 @@ function renderLogin(error = '') {
   const accounts = Object.entries(SAMPLE_ACCOUNTS).map(([company, users]) =>
     el(
       'div',
-      { class: company.startsWith('Alpha') ? 'alpha' : 'beta' },
+      { class: `account-group ${company.startsWith('Alpha') ? 'alpha' : 'beta'}` },
       el('h3', {}, company),
       users.map(([name, role, mail]) =>
         el(
@@ -158,30 +205,79 @@ function renderLogin(error = '') {
               login();
             },
           },
-          el('span', {}, name),
-          el('span', { class: 'muted' }, role),
+          el(
+            'span',
+            { class: 'initials', 'aria-hidden': 'true' },
+            name
+              .split(' ')
+              .map((n) => n[0])
+              .join(''),
+          ),
+          el('span', { class: 'account-name' }, name, el('small', {}, mail)),
+          el('span', { class: `role-tag role-${role.toLowerCase()}` }, role),
         ),
       ),
     ),
   );
 
   root.replaceChildren(
-    el('h1', {}, 'Family Dispatch: multi-tenant prototype'),
-    el('p', { class: 'muted' }, 'Fictional sample data. Two companies, three roles, isolation enforced by the server.'),
     el(
-      'form',
-      { class: 'card login-form', onsubmit: login },
-      el('div', {}, el('label', { for: 'email' }, 'Email'), email),
-      el('div', {}, el('label', { for: 'password' }, 'Password'), password),
-      el('button', { class: 'primary', type: 'submit' }, 'Log in'),
-    ),
-    errorLine,
-    el(
-      'section',
-      { class: 'card' },
-      el('h2', {}, 'Sample accounts'),
-      el('p', { class: 'muted' }, `Click a name to log in. Password for every account: ${PASSWORD}`),
-      el('div', { class: 'accounts' }, accounts),
+      'div',
+      { class: 'login-grid' },
+      el(
+        'section',
+        { class: 'intro' },
+        el('p', { class: 'eyebrow' }, 'Family Dispatch · assessment prototype'),
+        el('h1', {}, 'Two trucking companies. One app. Zero shared data.'),
+        el(
+          'p',
+          { class: 'lead' },
+          'Alpha Transport and Beta Logistics share the same app and database, but neither can see or change the other’s loads, drivers, trucks or documents. The server enforces it, not the screen.',
+        ),
+        el(
+          'ul',
+          { class: 'points' },
+          el(
+            'li',
+            {},
+            el('strong', {}, 'Three roles. '),
+            'Owners and dispatchers run the company; drivers see only their own loads.',
+          ),
+          el(
+            'li',
+            {},
+            el('strong', {}, 'Real workflow. '),
+            'Assigned, Picked Up, Delivered, with a proof of delivery required.',
+          ),
+          el(
+            'li',
+            {},
+            el('strong', {}, 'Try to break it. '),
+            'The Security check tab sends real cross-company requests.',
+          ),
+        ),
+        el('p', { class: 'fine' }, 'All names and data are fictional.'),
+      ),
+      el(
+        'section',
+        { class: 'signin' },
+        el(
+          'form',
+          { class: 'card login-form', onsubmit: login },
+          el('h2', {}, 'Log in'),
+          el('div', { class: 'field' }, el('label', { for: 'email' }, 'Email'), email),
+          el('div', { class: 'field' }, el('label', { for: 'password' }, 'Password'), password),
+          errorLine,
+          el('button', { class: 'primary wide', type: 'submit' }, 'Log in'),
+        ),
+        el(
+          'div',
+          { class: 'card' },
+          el('h2', {}, 'Sample accounts'),
+          el('p', { class: 'muted' }, 'Click a name to log in. Password for every account: ', el('code', {}, PASSWORD)),
+          el('div', { class: 'accounts' }, accounts),
+        ),
+      ),
     ),
   );
   email.focus();
@@ -190,11 +286,12 @@ function renderLogin(error = '') {
 // ---------- logged-in shell ----------
 
 function tabsForRole(role) {
-  if (role === 'driver')
+  if (role === 'driver') {
     return [
       ['myloads', 'My loads'],
       ['security', 'Security check'],
     ];
+  }
   const tabs = [
     ['loads', 'Loads'],
     ['drivers', 'Drivers'],
@@ -212,19 +309,36 @@ function defaultTab() {
 async function renderApp() {
   const me = state.me;
   document.body.className = `company-${COMPANIES[me.company.id]?.key || 'other'}`;
-  const content = el('div', {}, el('p', { class: 'muted' }, 'Loading...'));
-  const message = el('p', { class: 'muted', role: 'status' }, state.message);
-  state.message = '';
+  const content = el('div', { class: 'content' }, el('p', { class: 'muted' }, 'Loading...'));
+  const message = el(
+    'p',
+    { class: state.message ? `banner ${state.message.kind}` : 'banner empty', role: 'status' },
+    state.message ? state.message.text : '',
+  );
+  state.message = null;
 
   root.replaceChildren(
     el(
       'header',
-      { class: 'topbar' },
-      el('span', { class: 'chip' }, `${me.company.name} · ${ROLE_LABEL[me.role]}`),
+      { class: 'appbar' },
+      el(
+        'div',
+        { class: 'brand' },
+        el('span', { class: 'app-name' }, 'Family Dispatch'),
+        el('span', { class: 'chip' }, `${me.company.name} · ${ROLE_LABEL[me.role]}`),
+      ),
       el(
         'div',
         { class: 'who' },
-        el('span', {}, me.name),
+        el(
+          'span',
+          { class: 'initials small', 'aria-hidden': 'true' },
+          me.name
+            .split(' ')
+            .map((n) => n[0])
+            .join(''),
+        ),
+        el('span', { class: 'who-name' }, me.name),
         el('button', { type: 'button', onclick: logout }, 'Log out'),
       ),
     ),
@@ -280,53 +394,107 @@ async function advance(load, button) {
   button.disabled = true; // no double clicks while the request runs
   const res = await call('POST', `/api/loads/${load.id}/advance`, { from: load.status });
   state.message =
-    res.status === 200 ? `${load.ref} moved to ${res.data.load.status}.` : `${load.ref}: ${errorText(res)}`;
+    res.status === 200
+      ? { kind: 'ok', text: `${load.ref} moved to ${res.data.load.status}.` }
+      : { kind: 'error', text: `${load.ref}: ${errorText(res)}` };
   renderApp();
 }
 
+// A styled file picker: the real <input type=file> is visually hidden inside the label.
 function uploadForm(load) {
+  const chosen = el('span', { class: 'chosen' }, 'No file chosen');
   const input = el('input', {
     type: 'file',
     name: 'file',
+    class: 'visually-hidden',
     accept: '.pdf,.png,.jpg,.jpeg',
     'aria-label': `POD file for ${load.ref}`,
+  });
+  input.addEventListener('change', () => {
+    chosen.textContent = input.files[0] ? input.files[0].name : 'No file chosen';
   });
   const button = el('button', { type: 'button' }, 'Upload POD');
   button.addEventListener('click', async () => {
     if (!input.files[0]) {
-      state.message = 'Choose a PDF, PNG or JPG first.';
+      state.message = { kind: 'error', text: 'Choose a PDF, PNG or JPG first.' };
       return renderApp();
     }
+    button.disabled = true;
     const form = new FormData();
     form.append('file', input.files[0]);
     const res = await call('POST', `/api/loads/${load.id}/document`, form);
-    state.message = res.status === 201 ? `POD uploaded to ${load.ref}.` : `${load.ref}: ${errorText(res)}`;
+    state.message =
+      res.status === 201
+        ? { kind: 'ok', text: `POD uploaded to ${load.ref}.` }
+        : { kind: 'error', text: `${load.ref}: ${errorText(res)}` };
     renderApp();
   });
-  return el('div', { class: 'upload' }, input, button);
+  return el(
+    'div',
+    { class: 'upload' },
+    el('label', { class: 'button file-pick' }, input, 'Choose file'),
+    chosen,
+    button,
+    el('small', { class: 'muted hint' }, 'PDF, PNG or JPG, up to 5 MB'),
+  );
 }
 
-function nextButton(load) {
-  if (!NEXT_LABEL[load.status]) return el('span', { class: 'muted' }, 'Complete');
-  const button = el('button', { type: 'button', class: 'primary' }, NEXT_LABEL[load.status]);
+function nextButton(load, { wide = false } = {}) {
+  if (!NEXT_LABEL[load.status]) {
+    return el('span', { class: 'complete' }, wide ? 'Delivered and complete' : 'Complete');
+  }
+  const button = el('button', { type: 'button', class: wide ? 'primary wide' : 'primary' }, NEXT_LABEL[load.status]);
   button.addEventListener('click', () => advance(load, button));
   // The server refuses Delivered without a POD; say so before the user tries.
-  const needsPod = load.status === 'Picked Up' && !load.hasDocument;
-  return needsPod ? el('span', { class: 'next' }, button, el('small', { class: 'muted' }, 'POD needed first')) : button;
+  if (!needsPod(load)) return button;
+  return el('span', { class: 'next' }, button, el('small', { class: 'needs-pod' }, 'POD needed first'));
 }
 
-function podLink(load) {
-  if (!load.hasDocument) return el('span', { class: 'muted' }, 'None');
-  return el('a', { href: `/api/loads/${load.id}/document` }, 'Open POD');
+function downloadLink(loadId, label = 'Download') {
+  return el('a', { class: 'button', href: `/api/loads/${loadId}/document`, download: '' }, label);
+}
+
+function sizeText(bytes) {
+  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function docCard(loadId, doc) {
+  const ext = doc.filename.split('.').pop().toUpperCase();
+  return el(
+    'div',
+    { class: 'doc' },
+    el('span', { class: 'doc-icon', 'aria-hidden': 'true' }, ext),
+    el(
+      'div',
+      { class: 'doc-info' },
+      el('strong', {}, doc.filename),
+      el('small', {}, `${sizeText(doc.sizeBytes)} · uploaded by ${doc.uploadedBy} · `, time(doc.uploadedAt)),
+    ),
+    downloadLink(loadId),
+  );
 }
 
 // ---------- owner and dispatcher: loads ----------
 
 async function renderOfficeLoads() {
   const res = await call('GET', '/api/loads');
-  if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
+  if (res.status !== 200) return notice(res);
   const loads = res.data;
   const count = (s) => loads.filter((l) => l.status === s).length;
+
+  const stats = el(
+    'div',
+    { class: 'stats', 'aria-label': 'Load counts' },
+    STATUSES.map((s) =>
+      el('div', { class: 'stat' }, el('span', { class: 'stat-num' }, String(count(s))), el('span', {}, s)),
+    ),
+    el(
+      'div',
+      { class: `stat ${loads.some(needsPod) ? 'stat-warn' : ''}` },
+      el('span', { class: 'stat-num' }, String(loads.filter(needsPod).length)),
+      el('span', {}, 'Need a POD'),
+    ),
+  );
 
   const rows = loads.map((load) =>
     el(
@@ -341,88 +509,68 @@ async function renderOfficeLoads() {
             type: 'button',
             class: 'ref',
             'aria-label': `Open details for ${load.ref}`,
-            onclick: () => {
+            onclick: async () => {
               state.selectedLoadId = load.id;
-              renderApp();
+              await renderApp();
+              // On narrow screens the details sit below the table, so bring them into view.
+              if (window.innerWidth < 1080) document.querySelector('.detail')?.scrollIntoView();
             },
           },
           load.ref,
         ),
       ),
       el('td', { 'data-label': 'Route' }, route(load)),
-      el('td', { 'data-label': 'Driver' }, load.driver ? load.driver.name : 'Unassigned'),
+      el('td', { 'data-label': 'Driver', class: 'nowrap' }, load.driver ? load.driver.name : 'Unassigned'),
       el('td', { 'data-label': 'Truck', class: 'num' }, load.truck ? load.truck.unit : 'None'),
       el('td', { 'data-label': 'Status' }, pill(load.status)),
       el('td', { 'data-label': 'Next step' }, nextButton(load)),
-      el('td', { 'data-label': 'POD' }, podLink(load)),
     ),
   );
 
-  const out = [
+  const panel = state.selectedLoadId
+    ? await renderLoadDetail(state.selectedLoadId)
+    : el(
+        'aside',
+        { class: 'card panel-empty' },
+        el('h2', {}, 'Load details'),
+        el('p', { class: 'muted' }, 'Select a load number to see its status history and its delivery document.'),
+      );
+
+  return [
+    stats,
     el(
       'div',
-      { class: 'counts', 'aria-label': 'Load counts' },
-      STATUSES.map((s) => el('span', {}, el('strong', { class: 'num' }, String(count(s))), ` ${s}`)),
-    ),
-    el(
-      'div',
-      { class: 'table-wrap' },
+      { class: 'loads-layout' },
       el(
-        'table',
-        { class: 'responsive' },
-        el(
-          'thead',
-          {},
-          el(
-            'tr',
-            {},
-            ['Load', 'Route', 'Driver', 'Truck', 'Status', 'Next step', 'POD'].map((h) =>
-              el('th', { scope: 'col' }, h),
-            ),
-          ),
-        ),
-        el('tbody', {}, rows),
+        'div',
+        { class: 'card flush' },
+        table(['Load', 'Route', 'Driver', 'Truck', 'Status', 'Next step'], rows, 'Loads'),
       ),
+      panel,
     ),
-    el('p', { class: 'muted' }, 'Click a load number to see its history and upload a delivery document.'),
   ];
-  if (state.selectedLoadId) out.push(await renderLoadDetail(state.selectedLoadId));
-  return out;
 }
 
 async function renderLoadDetail(id) {
   const res = await call('GET', `/api/loads/${id}`);
-  if (res.status !== 200) return el('p', { class: 'notice' }, errorText(res));
+  if (res.status !== 200) return el('p', { class: 'banner error' }, errorText(res));
   const { load, events, document: doc } = res.data;
 
   return el(
-    'section',
+    'aside',
     { class: 'card detail', 'aria-label': `Details for ${load.ref}` },
-    el('h2', {}, `Load ${load.ref}`),
+    el('div', { class: 'detail-head' }, el('h2', {}, `Load ${load.ref}`), pill(load.status)),
+    el('p', { class: 'detail-route' }, route(load)),
     el(
       'dl',
-      {},
-      el('dt', {}, 'Route'),
-      el('dd', {}, route(load)),
-      el('dt', {}, 'Driver'),
-      el('dd', {}, load.driver ? load.driver.name : 'Unassigned'),
-      el('dt', {}, 'Truck'),
-      el('dd', {}, load.truck ? load.truck.unit : 'None'),
-      el('dt', {}, 'Status'),
-      el('dd', {}, pill(load.status)),
+      { class: 'facts' },
+      el('div', {}, el('dt', {}, 'Driver'), el('dd', {}, load.driver ? load.driver.name : 'Unassigned')),
+      el('div', {}, el('dt', {}, 'Truck'), el('dd', {}, load.truck ? load.truck.unit : 'None')),
     ),
-    tracker(load.status),
-    el('div', { class: 'actions' }, nextButton(load)),
+    stepper(load.status, events),
+    el('div', { class: 'actions' }, nextButton(load, { wide: true })),
     el('h3', {}, 'Delivery document (POD)'),
-    doc
-      ? el(
-          'p',
-          {},
-          el('a', { href: `/api/loads/${load.id}/document` }, doc.filename),
-          ` · uploaded by ${doc.uploadedBy} · `,
-          time(doc.uploadedAt),
-        )
-      : el('p', { class: 'muted' }, 'No document yet.'),
+    doc ? docCard(load.id, doc) : el('p', { class: 'doc-empty' }, 'No delivery document yet.'),
     uploadForm(load),
     el('h3', {}, 'History'),
     events.length
@@ -439,21 +587,34 @@ async function renderLoadDetail(id) {
 
 async function renderDriverLoads() {
   const res = await call('GET', '/api/loads');
-  if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
+  if (res.status !== 200) return notice(res);
   if (!res.data.length) return [el('p', { class: 'muted' }, 'No loads assigned to you.')];
 
   return [
-    el('h1', {}, 'My loads'),
-    ...res.data.map((load) =>
-      el(
-        'article',
-        { class: 'card load-card', 'aria-label': `Load ${load.ref}` },
-        el('div', { class: 'topbar' }, el('span', { class: 'ref' }, load.ref), pill(load.status)),
-        el('div', {}, route(load)),
-        el('div', { class: 'muted' }, `Truck ${load.truck ? load.truck.unit : 'none'}`),
-        tracker(load.status),
-        el('div', { class: 'actions' }, nextButton(load), load.hasDocument ? podLink(load) : null),
-        uploadForm(load),
+    el('h1', { class: 'page-title' }, 'My loads'),
+    el(
+      'div',
+      { class: 'card-grid' },
+      res.data.map((load) =>
+        el(
+          'article',
+          { class: 'card load-card', 'aria-label': `Load ${load.ref}` },
+          el('div', { class: 'detail-head' }, el('span', { class: 'ref' }, load.ref), pill(load.status)),
+          el('p', { class: 'detail-route' }, route(load)),
+          el('p', { class: 'muted' }, `Truck ${load.truck ? load.truck.unit : 'none'}`),
+          stepper(load.status),
+          el('div', { class: 'actions' }, nextButton(load, { wide: true })),
+          load.hasDocument
+            ? el(
+                'div',
+                { class: 'doc compact' },
+                el('span', { class: 'pod-yes' }, 'POD on file'),
+                downloadLink(load.id),
+              )
+            : null,
+          // Once delivered with a POD on file, there is nothing left for the driver to upload.
+          load.status === 'Delivered' && load.hasDocument ? null : uploadForm(load),
+        ),
       ),
     ),
   ];
@@ -463,121 +624,77 @@ async function renderDriverLoads() {
 
 async function renderDrivers() {
   const res = await call('GET', '/api/drivers');
-  if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
-  return [
+  if (res.status !== 200) return notice(res);
+  const rows = res.data.map((d) =>
     el(
-      'div',
-      { class: 'table-wrap' },
+      'tr',
+      {},
       el(
-        'table',
-        { class: 'responsive' },
+        'td',
+        { 'data-label': 'Driver' },
         el(
-          'thead',
-          {},
+          'span',
+          { class: 'person' },
           el(
-            'tr',
-            {},
-            ['Driver', 'Email', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)),
+            'span',
+            { class: 'initials small', 'aria-hidden': 'true' },
+            d.name
+              .split(' ')
+              .map((n) => n[0])
+              .join(''),
           ),
-        ),
-        el(
-          'tbody',
-          {},
-          res.data.map((d) =>
-            el(
-              'tr',
-              {},
-              el('td', { 'data-label': 'Driver' }, d.name),
-              el('td', { 'data-label': 'Email' }, d.email),
-              el('td', { 'data-label': 'Open loads', class: 'num' }, String(d.openLoads)),
-            ),
-          ),
+          d.name,
         ),
       ),
+      el('td', { 'data-label': 'Email' }, d.email),
+      el('td', { 'data-label': 'Open loads', class: 'num' }, String(d.openLoads)),
     ),
-  ];
+  );
+  return [el('div', { class: 'card flush' }, table(['Driver', 'Email', 'Open loads'], rows, 'Drivers'))];
 }
 
 async function renderTrucks() {
   const res = await call('GET', '/api/trucks');
-  if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
-  return [
+  if (res.status !== 200) return notice(res);
+  const rows = res.data.map((t) =>
     el(
-      'div',
-      { class: 'table-wrap' },
-      el(
-        'table',
-        { class: 'responsive' },
-        el(
-          'thead',
-          {},
-          el(
-            'tr',
-            {},
-            ['Truck', 'Open loads'].map((h) => el('th', { scope: 'col' }, h)),
-          ),
-        ),
-        el(
-          'tbody',
-          {},
-          res.data.map((t) =>
-            el(
-              'tr',
-              {},
-              el('td', { 'data-label': 'Truck', class: 'num' }, t.unit),
-              el('td', { 'data-label': 'Open loads', class: 'num' }, String(t.openLoads)),
-            ),
-          ),
-        ),
-      ),
+      'tr',
+      {},
+      el('td', { 'data-label': 'Truck', class: 'num' }, el('strong', {}, t.unit)),
+      el('td', { 'data-label': 'Open loads', class: 'num' }, String(t.openLoads)),
     ),
-  ];
+  );
+  return [el('div', { class: 'card flush' }, table(['Truck', 'Open loads'], rows, 'Trucks'))];
 }
 
 // ---------- owner: blocked log ----------
 
 async function renderBlocked() {
   const res = await call('GET', '/api/audit/denials');
-  if (res.status !== 200) return [el('p', { class: 'notice' }, errorText(res))];
+  if (res.status !== 200) return notice(res);
   const intro = el(
     'p',
     { class: 'muted' },
     'Requests from people in your company that the server refused. Try the Security check tab, then come back here.',
   );
-  if (!res.data.length) return [intro, el('p', {}, 'No blocked attempts yet.')];
-  return [
-    intro,
+  if (!res.data.length) return [intro, el('div', { class: 'card' }, el('p', {}, 'No blocked attempts yet.'))];
+  const rows = res.data.map((d) =>
     el(
-      'div',
-      { class: 'table-wrap' },
+      'tr',
+      {},
+      el('td', { 'data-label': 'When' }, time(d.at)),
+      el('td', { 'data-label': 'Who' }, `${d.user} (${ROLE_LABEL[d.role]})`),
+      el('td', { 'data-label': 'Request' }, el('code', {}, `${d.method} ${d.path}`)),
       el(
-        'table',
-        { class: 'responsive' },
-        el(
-          'thead',
-          {},
-          el(
-            'tr',
-            {},
-            ['When', 'Who', 'Request', 'Answer'].map((h) => el('th', { scope: 'col' }, h)),
-          ),
-        ),
-        el(
-          'tbody',
-          {},
-          res.data.map((d) =>
-            el(
-              'tr',
-              {},
-              el('td', { 'data-label': 'When' }, time(d.at)),
-              el('td', { 'data-label': 'Who' }, `${d.user} (${ROLE_LABEL[d.role]})`),
-              el('td', { 'data-label': 'Request', class: 'num' }, `${d.method} ${d.path}`),
-              el('td', { 'data-label': 'Answer' }, d.status === 403 ? '403 wrong role' : '404 not found'),
-            ),
-          ),
-        ),
+        'td',
+        { 'data-label': 'Answer' },
+        el('span', { class: 'badge badge-blocked' }, d.status === 403 ? '403 wrong role' : '404 not found'),
       ),
     ),
+  );
+  return [
+    intro,
+    el('div', { class: 'card flush' }, table(['When', 'Who', 'Request', 'Answer'], rows, 'Blocked attempts')),
   ];
 }
 
@@ -646,7 +763,10 @@ async function renderSecurity() {
   const me = state.me;
   const ownRes = await call('GET', '/api/loads');
   const attacks = attacksFor(me, ownRes.data || []);
-  const results = el('div', { 'aria-live': 'polite' });
+  const results = el('div', { class: 'results', 'aria-live': 'polite' });
+  const summary = el('p', { class: 'banner empty' });
+  let sent = 0;
+  let blockedCount = 0;
 
   async function runAttack(attack) {
     let body = attack.body;
@@ -656,7 +776,24 @@ async function renderSecurity() {
     }
     const res = await call(attack.method, attack.path, body);
     const blocked = attack.blocked(res);
-    const shownBody = typeof res.data === 'string' ? res.data.slice(0, 200) : JSON.stringify(res.data);
+    sent += 1;
+    if (blocked) blockedCount += 1;
+    summary.className = blockedCount === sent ? 'banner ok' : 'banner error';
+    summary.textContent = `${blockedCount} of ${sent} requests blocked by the server.`;
+    const raw = typeof res.data === 'string' ? res.data.slice(0, 200) : JSON.stringify(res.data);
+    // A list answer is long: say what came back in one line and fold the raw JSON underneath.
+    const answer = Array.isArray(res.data)
+      ? el(
+          'div',
+          {},
+          el(
+            'pre',
+            {},
+            `${res.status}  returned ${res.data.length} loads: ${res.data.map((l) => l.ref).join(', ')} (all your own company)`,
+          ),
+          el('details', {}, el('summary', {}, 'Raw response'), el('pre', {}, raw)),
+        )
+      : el('pre', {}, `${res.status}  ${raw}`);
     results.prepend(
       el(
         'div',
@@ -672,11 +809,11 @@ async function renderSecurity() {
           ),
         ),
         el(
-          'div',
-          { class: 'line' },
-          el('span', {}, `${attack.method} ${attack.path}${attack.body ? ` ${JSON.stringify(attack.body)}` : ''}`),
+          'code',
+          { class: 'request' },
+          `${attack.method} ${attack.path}${attack.body ? ` ${JSON.stringify(attack.body)}` : ''}`,
         ),
-        el('pre', {}, `${res.status}  ${shownBody}`),
+        answer,
       ),
     );
   }
@@ -686,11 +823,11 @@ async function renderSecurity() {
   }
 
   return [
-    el('h1', {}, 'Security check'),
+    el('h1', { class: 'page-title' }, 'Security check'),
     el(
       'p',
-      {},
-      `You are ${me.company.name} · ${ROLE_LABEL[me.role]}. Each button sends a real request for data you should not get, straight to the server.`,
+      { class: 'lead' },
+      `You are ${me.company.name} · ${ROLE_LABEL[me.role]}. Each button sends a real request for data you should not get, straight to the server. The page shows exactly what the server answered.`,
     ),
     el(
       'div',
@@ -698,6 +835,7 @@ async function renderSecurity() {
       attacks.map((a) => el('button', { type: 'button', onclick: () => runAttack(a) }, `Try: ${a.label}`)),
       el('button', { type: 'button', class: 'primary', onclick: runAll }, 'Run all'),
     ),
+    summary,
     results,
   ];
 }

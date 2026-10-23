@@ -6,33 +6,100 @@ endobj
 << /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
 3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 432 >>
+<< /Length 4152 >>
 stream
-BT /F1 18 Tf 72 720 Td (PROOF OF DELIVERY (SAMPLE)) Tj ET
-BT /F1 12 Tf 72 694 Td (Company: Beta Logistics) Tj ET
-BT /F1 12 Tf 72 668 Td (Load: B-2002) Tj ET
-BT /F1 12 Tf 72 642 Td (Route: Savannah GA to Jacksonville FL) Tj ET
-BT /F1 12 Tf 72 616 Td (Driver: Ben Ward) Tj ET
-BT /F1 12 Tf 72 590 Td (Received in good condition. Signed: J. Doe) Tj ET
-BT /F1 12 Tf 72 564 Td (Fictional sample document for a technical assessment.) Tj ET
+BT /F2 96 Tf 0.94 0.94 0.94 rg 0.7071 0.7071 -0.7071 0.7071 150 230 Tm (SAMPLE) Tj ET
+0.059 0.463 0.431 rg 0 772 612 20 re f
+BT /F2 20 Tf 0.071 0.125 0.184 rg 48 735 Td (Beta Logistics) Tj ET
+BT /F1 8.5 Tf 0.275 0.322 0.373 rg 48 718 Td (MC 000202 \(sample\)  |  Fictional carrier for a software assessment) Tj ET
+BT /F2 16 Tf 0.059 0.463 0.431 rg 388 735 Td (PROOF OF DELIVERY) Tj ET
+BT /F2 9.5 Tf 0.071 0.125 0.184 rg 388 718 Td (POD-B-2002   Load B-2002) Tj ET
+0.8 0.78 0.74 RG 0.8 w 48 600 252 96 re S
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 60 680 Td (SHIPPER \(PICKUP\)) Tj ET
+BT /F2 11 Tf 0.071 0.125 0.184 rg 60 662 Td (Coastal Peach Growers Co-op) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 60 648 Td (18 River St) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 60 634 Td (Savannah, GA 31401) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 60 615 Td (PICKED UP) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 140 615 Td (10/23/2026  06:40) Tj ET
+0.8 0.78 0.74 RG 0.8 w 312 600 252 96 re S
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 324 680 Td (CONSIGNEE \(DELIVERY\)) Tj ET
+BT /F2 11 Tf 0.071 0.125 0.184 rg 324 662 Td (First Coast Fresh Market) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 324 648 Td (900 Bay St) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 324 634 Td (Jacksonville, FL 32202) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 324 615 Td (DELIVERED) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 404 615 Td (10/23/2026  10:55) Tj ET
+0.8 0.78 0.74 RG 0.8 w 48 538 516 46 re S
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 60 568 Td (DRIVER) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 60 550 Td (Ben Ward) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 189 568 Td (TRUCK) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 189 550 Td (B-202) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 318 568 Td (TRAILER) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 318 550 Td (RF-48-12 \(reefer, 34 F\)) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 447 568 Td (SEAL NO.) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 447 550 Td (SL 772031) Tj ET
+0.96 0.95 0.93 rg 48 494 516 24 re f
+0.8 0.78 0.74 RG 0.8 w 48 494 516 24 re S
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 60 503 Td (PIECES) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 120 503 Td (DESCRIPTION) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 420 503 Td (WEIGHT \(LB\)) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 500 503 Td (CONDITION) Tj ET
+0.8 0.78 0.74 RG 0.8 w 48 470 516 24 re S
+BT /F1 10 Tf 0.071 0.125 0.184 rg 60 478 Td (22) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 120 478 Td (Pallets, fresh peaches \(cased\)) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 420 478 Td (28,400) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 500 478 Td (Good) Tj ET
+0.8 0.78 0.74 RG 0.8 w 48 446 516 24 re S
+BT /F1 10 Tf 0.071 0.125 0.184 rg 60 454 Td (4) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 120 454 Td (Pallets, pecans \(bagged\)) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 420 454 Td (3,200) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 500 454 Td (Good) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 330 424 Td (Total weight) Tj ET
+BT /F2 10 Tf 0.071 0.125 0.184 rg 420 424 Td (31,600 lb) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 48 370 Td (EXCEPTIONS \(SHORTAGE, DAMAGE, REFUSED\)) Tj ET
+0.071 0.125 0.184 RG 0.8 w 48 344 10 10 re S
+BT /F2 9 Tf 0.071 0.125 0.184 rg 50 346 Td (X) Tj ET
+BT /F1 10 Tf 0.071 0.125 0.184 rg 66 346 Td (None. Received in good order, count and condition as listed above.) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 48 300 Td (RECEIVED BY \(CONSIGNEE\)) Tj ET
+BT /F3 18 Tf 0.12 0.2 0.45 rg 48 262 Td (D. Okafor) Tj ET
+0.071 0.125 0.184 RG 0.8 w 48 255 m 278 255 l S
+BT /F1 9 Tf 0.275 0.322 0.373 rg 48 241 Td (D. Okafor   10/23/2026  10:55) Tj ET
+BT /F2 7.5 Tf 0.275 0.322 0.373 rg 334 300 Td (DELIVERED BY \(DRIVER\)) Tj ET
+BT /F3 18 Tf 0.12 0.2 0.45 rg 334 262 Td (Ben Ward) Tj ET
+0.071 0.125 0.184 RG 0.8 w 334 255 m 564 255 l S
+BT /F1 9 Tf 0.275 0.322 0.373 rg 334 241 Td (Ben Ward   10/23/2026  10:55) Tj ET
+0.8 0.78 0.74 RG 0.8 w 48 96 m 564 96 l S
+BT /F1 8 Tf 0.275 0.322 0.373 rg 48 80 Td (Fictional sample document created for a software assessment. Not a real shipment, company or person.) Tj ET
+BT /F1 8 Tf 0.275 0.322 0.373 rg 48 68 Td (Attached to load B-2002 in the Family Dispatch prototype.) Tj ET
 endstream
 endobj
 5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+8 0 obj
+<< /Title (Proof of delivery POD-B-2002 \(sample\)) /Producer (Family Dispatch prototype sample generator) >>
 endobj
 xref
-0 6
+0 9
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000241 00000 n 
-0000000724 00000 n 
+0000000261 00000 n 
+0000004465 00000 n 
+0000004562 00000 n 
+0000004664 00000 n 
+0000004769 00000 n 
 trailer
-<< /Size 6 /Root 1 0 R >>
+<< /Size 9 /Root 1 0 R /Info 8 0 R >>
 startxref
-794
+4894
 %%EOF

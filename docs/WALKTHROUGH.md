@@ -53,7 +53,7 @@ Owners, dispatchers and the assigned driver can upload a POD (PDF, PNG or JPG, u
 - stores it under a random name in that company's folder;
 - always serves it as a download.
 
-A POD is required before a load can be marked Delivered. A-1002 and B-2002 start with a fake POD from the sample data.
+A POD is required before a load can be marked Delivered. A-1002 and B-2002 start with a sample POD: a filled-in proof-of-delivery form with shipper, consignee, driver, truck, trailer, seal number, freight lines, exceptions and both signatures, watermarked SAMPLE and labelled fictional.
 
 ![After advancing A-1001 and uploading a POD](screenshots/after-advance-and-upload-1440.png)
 
@@ -80,4 +80,4 @@ The owner can then see those attempts in the **Blocked log**:
 
 ![Blocked log](screenshots/blocked-log-1440.png)
 
-The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected. And `npm run browser-check` drives Chrome through these screens as all 8 users: 49 of 49 checks passed ([BROWSER-CHECK.md](BROWSER-CHECK.md)).
+The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected. And `npm run browser-check` drives Chrome through these screens as all 8 users: 62 of 62 checks passed ([BROWSER-CHECK.md](BROWSER-CHECK.md)).
