@@ -32,7 +32,9 @@ function expected(user, load) {
   const otherCompany = user.company !== load.company;
   const otherDriver = user.role === 'driver' && user.email !== load.driver;
   if (otherCompany || otherDriver) return { view: 404, document: 404, advance: 404 };
-  return { view: 200, document: load.pod ? 200 : 404, advance: load.status === 'Delivered' ? 409 : 200 };
+  // Advance: Delivered is the end (409); Picked Up needs a POD before Delivered (409 without one).
+  const advance = load.status === 'Delivered' || (load.status === 'Picked Up' && !load.pod) ? 409 : 200;
+  return { view: 200, document: load.pod ? 200 : 404, advance };
 }
 
 test('matrix: every user against every load and action', async (t) => {
@@ -51,7 +53,8 @@ test('matrix: every user against every load and action', async (t) => {
       const got = {
         view: (await agent.get(`/api/loads/${ids.loads[load.ref]}`)).status,
         document: (await agent.get(`/api/loads/${ids.loads[load.ref]}/document`)).status,
-        advance: (await writer.post(`/api/loads/${fresh.ids.loads[load.ref]}/advance`)).status,
+        advance: (await writer.post(`/api/loads/${fresh.ids.loads[load.ref]}/advance`).send({ from: load.status }))
+          .status,
       };
       for (const action of ['view', 'document', 'advance']) {
         checks++;

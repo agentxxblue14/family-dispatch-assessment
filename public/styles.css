@@ -318,6 +318,13 @@ tr.selected td {
   margin-top: 8px;
 }
 
+.next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* Driver cards */
 .load-card .actions {
   display: flex;

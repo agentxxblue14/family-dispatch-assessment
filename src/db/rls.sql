@@ -4,15 +4,22 @@
 -- Each request sets app.company_id for its own transaction only (see withTenant in index.js).
 -- Each policy compares company_id with that setting. If the setting is missing or empty,
 -- NULLIF turns it into NULL, "company_id = NULL" is never true, and the query sees no rows
--- (fails closed). FORCE makes the policy apply even to the table owner.
+-- (fails closed).
+--
+-- What actually enforces the policies here is SET LOCAL ROLE app_user: app_user is neither
+-- the owner nor a superuser. FORCE matters on hosted Postgres, where the app might connect as
+-- the table owner; there it stops the owner skipping the policies. In PGlite the owner is a
+-- superuser, and superusers always skip RLS, which is why the app never queries tenant data
+-- as the owner (only the login lookups and the seed do, see index.js and seed.js).
 
 CREATE ROLE app_user NOLOGIN;
 
--- Least privilege: app_user can only do what the app needs. No DELETE anywhere,
--- no UPDATE except load status, no INSERT into users, trucks or loads.
+-- Least privilege: app_user can only do what the app needs. No DELETE anywhere, UPDATE only
+-- on the status column of loads, no INSERT into users, trucks or loads.
 GRANT SELECT ON companies TO app_user;
 GRANT SELECT ON users, trucks TO app_user;
-GRANT SELECT, UPDATE ON loads TO app_user;
+GRANT SELECT ON loads TO app_user;
+GRANT UPDATE (status) ON loads TO app_user;
 GRANT SELECT, INSERT ON load_events, documents, access_denials TO app_user;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO app_user;
 

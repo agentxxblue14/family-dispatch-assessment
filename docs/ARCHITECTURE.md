@@ -66,8 +66,8 @@ CREATE POLICY tenant_isolation ON loads
 ```
 
 - Every request's queries run inside `withTenant`, which opens a transaction, sets `app.company_id` with `set_config(..., true)` (a bound parameter, never string-built SQL) and switches to `app_user` with `SET LOCAL ROLE`. Both settings end when the transaction ends, so one request's company can never carry into the next.
-- `app_user` does not own the tables and has only the grants the app needs: no DELETE anywhere, UPDATE only on loads, no INSERT into users, trucks or loads.
-- `FORCE` makes the policy apply to the table owner too.
+- `app_user` is neither the table owner nor a superuser, and has only the grants the app needs: no DELETE anywhere, UPDATE only on the `status` column of loads (a column-level grant, tested), no INSERT into users, trucks or loads.
+- Switching to `app_user` is what makes the policies apply here. In PGlite the tables are owned by the `postgres` superuser, and superusers always skip Row Level Security, so the app never reads tenant data as the owner. Only the two login lookups and the seed do, and each is documented. `FORCE` is kept for hosted Postgres, where an app might connect as the table owner: there it stops the owner skipping the policies.
 - Fails closed: if the company setting is missing, `NULLIF` makes it NULL, `company_id = NULL` is never true, and the query sees nothing.
 - `WITH CHECK` stops writes as well as reads: inserting a row for another company raises an error, and updating another company's row changes 0 rows.
 
@@ -102,7 +102,9 @@ One table in `src/policy/permissions.js`, one function `can(user, action, load)`
 - `requireLoadAccess(action)` guards routes about one load. It loads the load through the repository, then applies `can()`. Another company's load, another driver's load and a missing id all return the same `404`.
 - `can()` denies by default: an unknown action or role is refused, and the table is frozen so it cannot be changed at runtime.
 - The driver rule lives in two places on purpose: the repository only returns a driver's own loads, and `can()` checks `load.driver_id === user.id`.
-- The status workflow is server-side: `nextStatus()` picks the next step. The browser never sends a status, so a load cannot skip a step or move backwards. Two clicks at once cannot both move a load, because the row is locked with `SELECT ... FOR UPDATE` inside the same transaction that writes the history row.
+- The status workflow is server-side: `nextStatus()` picks the next step, so a load cannot skip a step or move backwards. The browser sends only `{"from": "<status on screen>"}`, never the status to move to.
+- If the load is no longer at that status (a double click, or a colleague moved it first), the answer is `409 This load has changed`. The check runs on a row locked with `SELECT ... FOR UPDATE`, in the same transaction that writes the history row, so ten clicks at the same moment move the load exactly one step (tested). The button is also disabled while its request runs.
+- A load cannot be marked Delivered until a delivery document (POD) is on file: `409 Upload the delivery document (POD) before marking Delivered`.
 - Every 403 and 404 is logged to `access_denials`. The owner sees their own company's blocked attempts in the Blocked log tab.
 
 ## Data model
@@ -148,7 +150,10 @@ Indexes lead with `company_id` (for example `loads (company_id, driver_id)`), be
 | Malicious upload | .exe renamed .pdf, huge file, `../` in the name, a PDF hiding HTML | File signature check, 5 MB cap, random stored names in a per-company folder, forced download with nosniff and a sandbox CSP | documents |
 | SQL injection | id = `1 OR 1=1` | Strict id pattern, parameterized queries everywhere, `set_config` with a parameter | isolation |
 | Stored XSS | Script in a file name | File names cleaned on upload; the page inserts all text with `textContent`, never `innerHTML` | documents, code review |
-| Skipping a status | Assigned straight to Delivered | Server computes the next status and ignores the body | workflow |
+| Skipping a status | Assigned straight to Delivered | Server computes the next status; the body only says which status the user saw | workflow |
+| Double click or stale screen | Two clicks move a load two steps | `{from}` checked on a locked row, 409 if it changed; button disabled while pending | workflow (10 parallel clicks, 1 move) |
+| Delivered with no proof | Marking Delivered before any POD exists | Server refuses Delivered until a document is on file | workflow, matrix |
+| App role does more than intended | Changing a load's driver or company through the status update | Column-level grant: app_user may update `status` only | rls |
 
 ## Decisions and why
 
@@ -168,6 +173,12 @@ Indexes lead with `company_id` (for example `loads (company_id, driver_id)`), be
 
 **Upload checks before the file is read.** The route checks login, the load and the role before multer reads a single byte, so a foreign or anonymous upload is refused without accepting the file. The file type is decided by its first bytes, not by its name or the browser's claim.
 
+**Owner and dispatcher are close on purpose.** In a small carrier the dispatcher runs the day: loads, drivers, trucks, status, paperwork. So in this prototype both can do all of that, and the owner adds oversight (the Blocked log). The brief's features are all operational, so there was nothing else to split. In production the owner would also get user management, billing and company settings: new rows in the same permission table, with no other code changes.
+
+**No delivery without a POD.** In trucking, a load is not really delivered until there is proof of delivery, and the POD is what the customer gets invoiced against. Making the server refuse Delivered until a document is on file ties requirement 6 (documents) to requirement 5 (workflow).
+
+**The browser sends the status it saw, not the status it wants.** The server still decides the next step, but it refuses if the load has moved since the screen was drawn. This is optimistic concurrency: no locks held between requests, and a clear 409 instead of a silent double move. The first version did not have this, and the hiring-manager review caught a double click moving a load two steps. The test that reproduces it now passes.
+
 **Append-only documents.** A new POD upload adds a row instead of replacing one. The newest row is the current document and older ones stay as history. This also means the app needs no UPDATE or DELETE permission on documents.
 
 **Replit preview allowed to frame the app.** Helmet normally blocks all framing. The CSP `frame-ancestors` rule allows only this site and `replit.com`, so the Replit workspace preview pane works and every other site is still refused.
@@ -178,7 +189,7 @@ Indexes lead with `company_id` (for example `loads (company_id, driver_id)`), be
 
 The same design scales to hundreds of companies: one shared database, `company_id` on every row, RLS policies, indexes that start with `company_id`. The changes would be:
 
-- Hosted Postgres (Replit Postgres or Neon) through the `pg` package. The app would connect as a non-owner role, and the login lookup would become a small `SECURITY DEFINER` function, because RLS on `users` would otherwise hide every user before the company is known.
+- Hosted Postgres (Replit Postgres or Neon) through the `pg` package. The app would connect as a non-owner, non-superuser role (today PGlite connects as a superuser, and the app switches to `app_user` for every tenant query). The login lookup would become a small `SECURITY DEFINER` function, because RLS on `users` would otherwise hide every user before the company is known.
 - A Postgres-backed session store and a shared rate-limit store, so the app can run more than one instance.
 - Object storage with short-lived signed URLs for documents.
 - Screens to create loads, assign drivers and invite users, each going through the same repository and permission table.

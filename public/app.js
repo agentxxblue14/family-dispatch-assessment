@@ -275,8 +275,10 @@ async function logout() {
 
 // ---------- actions shared by office and driver screens ----------
 
-async function advance(load) {
-  const res = await call('POST', `/api/loads/${load.id}/advance`);
+// Sends the status on screen ({from}); the server refuses with 409 if the load changed since.
+async function advance(load, button) {
+  button.disabled = true; // no double clicks while the request runs
+  const res = await call('POST', `/api/loads/${load.id}/advance`, { from: load.status });
   state.message =
     res.status === 200 ? `${load.ref} moved to ${res.data.load.status}.` : `${load.ref}: ${errorText(res)}`;
   renderApp();
@@ -306,7 +308,11 @@ function uploadForm(load) {
 
 function nextButton(load) {
   if (!NEXT_LABEL[load.status]) return el('span', { class: 'muted' }, 'Complete');
-  return el('button', { type: 'button', class: 'primary', onclick: () => advance(load) }, NEXT_LABEL[load.status]);
+  const button = el('button', { type: 'button', class: 'primary' }, NEXT_LABEL[load.status]);
+  button.addEventListener('click', () => advance(load, button));
+  // The server refuses Delivered without a POD; say so before the user tries.
+  const needsPod = load.status === 'Picked Up' && !load.hasDocument;
+  return needsPod ? el('span', { class: 'next' }, button, el('small', { class: 'muted' }, 'POD needed first')) : button;
 }
 
 function podLink(load) {
@@ -592,7 +598,13 @@ function attacksFor(me, ownLoads) {
 
   const attacks = [
     { label: `Open a ${other.name} load`, method: 'GET', path: `/api/loads/${target}`, blocked: refused },
-    { label: 'Move it to the next status', method: 'POST', path: `/api/loads/${target}/advance`, blocked: refused },
+    {
+      label: 'Move it to the next status',
+      method: 'POST',
+      path: `/api/loads/${target}/advance`,
+      body: { from: 'Assigned' },
+      blocked: refused,
+    },
     {
       label: 'Download its delivery document',
       method: 'GET',
@@ -637,7 +649,7 @@ async function renderSecurity() {
   const results = el('div', { 'aria-live': 'polite' });
 
   async function runAttack(attack) {
-    let body;
+    let body = attack.body;
     if (attack.upload) {
       body = new FormData();
       body.append('file', new Blob(['%PDF-1.4 fake'], { type: 'application/pdf' }), 'attack.pdf');
@@ -659,7 +671,11 @@ async function renderSecurity() {
             blocked ? attack.blockedText || 'BLOCKED' : 'ALLOWED',
           ),
         ),
-        el('div', { class: 'line' }, el('span', {}, `${attack.method} ${attack.path}`)),
+        el(
+          'div',
+          { class: 'line' },
+          el('span', {}, `${attack.method} ${attack.path}${attack.body ? ` ${JSON.stringify(attack.body)}` : ''}`),
+        ),
         el('pre', {}, `${res.status}  ${shownBody}`),
       ),
     );

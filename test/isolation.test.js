@@ -43,7 +43,7 @@ test('a foreign load and a missing load look exactly the same (no enumeration)',
 test('Alpha dispatcher cannot move a Beta load, and the Beta load is unchanged', async () => {
   const { app: fresh, ids: freshIds } = await makeApp();
   const alpha = await agentFor(fresh, 'dispatch@alpha.test');
-  const res = await alpha.post(`/api/loads/${freshIds.loads['B-2001']}/advance`);
+  const res = await alpha.post(`/api/loads/${freshIds.loads['B-2001']}/advance`).send({ from: 'Assigned' });
   assert.equal(res.status, 404);
   assert.deepEqual(res.body, NOT_FOUND);
   const beta = await agentFor(fresh, 'owner@beta.test');
@@ -72,7 +72,9 @@ test('company_id sent in the query, body or a header is ignored', async () => {
   assert.equal(foreign.status, 404);
 
   // Advancing an Alpha load with a Beta company_id in the body moves the Alpha load only.
-  const moved = await alpha.post(`/api/loads/${freshIds.loads['A-1001']}/advance`).send({ company_id: Number(beta) });
+  const moved = await alpha
+    .post(`/api/loads/${freshIds.loads['A-1001']}/advance`)
+    .send({ from: 'Assigned', company_id: Number(beta) });
   assert.equal(moved.status, 200);
   assert.equal(moved.body.load.ref, 'A-1001');
   const betaOwner = await agentFor(fresh, 'owner@beta.test');
@@ -96,7 +98,7 @@ test("blocked attempts are logged for the attacker's own company owner only", as
   const { app: fresh, ids: freshIds } = await makeApp();
   const alpha = await agentFor(fresh, 'owner@alpha.test');
   await alpha.get(`/api/loads/${freshIds.loads['B-2002']}`);
-  await alpha.post(`/api/loads/${freshIds.loads['B-2003']}/advance`);
+  await alpha.post(`/api/loads/${freshIds.loads['B-2003']}/advance`).send({ from: 'Picked Up' });
 
   const log = await alpha.get('/api/audit/denials');
   assert.equal(log.status, 200);

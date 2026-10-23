@@ -45,7 +45,7 @@ test("driver opening another driver's load gets 404, same as a foreign load", as
 test("driver cannot move another driver's load, and it stays Assigned", async () => {
   const { app: fresh, ids: freshIds } = await makeApp();
   const driver = await agentFor(fresh, 'driver1@alpha.test');
-  const res = await driver.post(`/api/loads/${freshIds.loads['A-1004']}/advance`);
+  const res = await driver.post(`/api/loads/${freshIds.loads['A-1004']}/advance`).send({ from: 'Assigned' });
   assert.equal(res.status, 404);
   const dispatcher = await agentFor(fresh, 'dispatch@alpha.test');
   const check = await dispatcher.get(`/api/loads/${freshIds.loads['A-1004']}`);

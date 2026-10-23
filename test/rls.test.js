@@ -74,3 +74,17 @@ test('other tenant tables are isolated too (users, trucks, documents)', async ()
   });
   assert.deepEqual(counts, { users: 4, trucks: 2, documents: 1, foreign: 0 });
 });
+
+// Review B: the grant comment said "no UPDATE except load status" but the grant covered every column.
+test('app_user can change a load status but no other load column', async () => {
+  await assert.rejects(
+    withTenant(db, ids.companies.alpha, (tx) =>
+      tx.query('UPDATE loads SET driver_id = $1 WHERE id = $2', [ids.users['driver2@alpha.test'], ids.loads['A-1001']]),
+    ),
+    /permission denied/,
+  );
+  const r = await withTenant(db, ids.companies.alpha, (tx) =>
+    tx.query("UPDATE loads SET status = 'Assigned' WHERE id = $1", [ids.loads['A-1001']]),
+  );
+  assert.equal(r.affectedRows, 1);
+});

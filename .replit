@@ -7,7 +7,7 @@ localPort = 3000
 externalPort = 80
 
 # Deployment must run ONE instance: sessions and the database are in memory.
-# In the Deploy screen choose Reserved VM, or Autoscale with max instances set to 1.
+# Replit picks the deployment type in the Publish screen ("Adjust settings"): choose
+# Reserved VM, or Autoscale with the maximum number of servers set to 1.
 [deployment]
 run = ["sh", "-c", "NODE_ENV=production TRUST_PROXY=1 node src/server.js"]
-deploymentTarget = "autoscale"

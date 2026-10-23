@@ -40,7 +40,7 @@ A driver sees only the loads assigned to them, as large cards made for a phone. 
 
 ## 5. Load status workflow
 
-Each load shows a three-step tracker and one button for the next step: **Mark Picked Up**, then **Mark Delivered**. The browser never sends a status. The server works out the next one, so a load cannot skip a step or go backwards. A Delivered load answers 409. Every move is recorded with who made it and when.
+Each load shows a three-step tracker and one button for the next step: **Mark Picked Up**, then **Mark Delivered**. The server works out the next status, so a load cannot skip a step or go backwards. The browser only says which status it was looking at. If the load has moved since (a double click, or a colleague got there first), the answer is 409 and nothing changes: ten clicks at the same moment move a load exactly one step. A load cannot be marked Delivered until its POD is uploaded, and the page says "POD needed first". Every move is recorded with who made it and when.
 
 ![Load detail with history and POD](screenshots/load-detail-1440.png)
 
@@ -53,9 +53,13 @@ Owners, dispatchers and the assigned driver can upload a POD (PDF, PNG or JPG, u
 - stores it under a random name in that company's folder;
 - always serves it as a download.
 
-A-1002 and B-2002 start with a fake POD from the sample data.
+A POD is required before a load can be marked Delivered. A-1002 and B-2002 start with a fake POD from the sample data.
 
 ![After advancing A-1001 and uploading a POD](screenshots/after-advance-and-upload-1440.png)
+
+The driver's view after delivering A-1001. A-1003 still needs its POD before it can be delivered:
+
+<img src="screenshots/driver-after-delivery-390.png" alt="Driver view with POD needed first" width="300">
 
 ## 7. Multi-tenant security
 
@@ -76,4 +80,4 @@ The owner can then see those attempts in the **Blocked log**:
 
 ![Blocked log](screenshots/blocked-log-1440.png)
 
-The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected.
+The same test runs automatically as `npm run security-test`: 32 cross-company attempts in both directions, then a direct database check that nothing was written. Result: **32 cross-company attempts, 0 leaks** ([SECURITY-TEST.md](SECURITY-TEST.md)). The automated suite adds a matrix test that tries all 8 users against all 8 loads for view, document and advance: 192 checks, 0 unexpected. And `npm run browser-check` drives Chrome through these screens as all 8 users: 49 of 49 checks passed ([BROWSER-CHECK.md](BROWSER-CHECK.md)).

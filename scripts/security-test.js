@@ -46,7 +46,7 @@ async function main() {
     if (body) headers['Content-Type'] = 'application/json';
     const res = await fetch(base + url, { method, headers, body: body && JSON.stringify(body) });
     const text = await res.text();
-    return { status: res.status, text, headers: res.headers };
+    return { status: res.status, statusText: res.statusText, text, headers: res.headers };
   }
 
   const rows = [];
@@ -66,16 +66,19 @@ async function main() {
     // Direct requests for the other company's records: each must be 404 Not found.
     const direct = [];
     for (const ref of victimRefs) direct.push(['GET', `/api/loads/${ids.loads[ref]}`, `view ${ref}`]);
-    for (const ref of victimRefs) direct.push(['POST', `/api/loads/${ids.loads[ref]}/advance`, `move ${ref}`]);
+    // An attacker would send a valid body too, so the move requests carry {from: "Assigned"}.
+    for (const ref of victimRefs) {
+      direct.push(['POST', `/api/loads/${ids.loads[ref]}/advance`, `move ${ref}`, { from: 'Assigned' }]);
+    }
     for (const ref of victimRefs) direct.push(['GET', `/api/loads/${ids.loads[ref]}/document`, `POD of ${ref}`]);
-    for (const [method, url, what] of direct) {
-      const res = await send(cookie, method, url);
+    for (const [method, url, what, body] of direct) {
+      const res = await send(cookie, method, url, body);
       const blocked = res.status === 404 && res.text === '{"error":"Not found"}';
       if (!raw) raw = { email, method, url, res };
       rows.push({
         who: email,
         what,
-        request: `${method} ${url}`,
+        request: body ? `${method} ${url} body ${JSON.stringify(body)}` : `${method} ${url}`,
         expected: '404',
         res,
         result: blocked ? 'BLOCKED' : 'LEAK',
@@ -97,7 +100,7 @@ async function main() {
         'POST',
         `/api/loads/${ids.loads[ownLoadRef]}/advance`,
         `move own ${ownLoadRef} with body company_id`,
-        { company_id: victimCompany },
+        { from: 'Assigned', company_id: victimCompany },
       ],
     ];
     for (const [method, url, what, body] of spoofs) {
@@ -130,7 +133,7 @@ async function main() {
 
   const leaks = rows.filter((r) => r.result === 'LEAK').length + (writesOk ? 0 : 1);
   const summary = `${rows.length} cross-company attempts, ${leaks} leaks`;
-  fs.writeFileSync(OUT, report({ rows, raw, summary, writesOk }));
+  fs.writeFileSync(OUT, report({ rows, raw, base, summary, writesOk }));
   console.log(rows.map((r) => `${r.result.padEnd(13)} ${r.res.status} ${r.who} ${r.request}`).join('\n'));
   console.log(`Write check: ${writesOk ? 'no cross-company write landed' : 'A CROSS-COMPANY WRITE LANDED'}`);
   console.log(summary);
@@ -143,7 +146,7 @@ function excerpt(text) {
   return (oneLine.length > 70 ? `${oneLine.slice(0, 70)}...` : oneLine).replace(/\|/g, '\\|');
 }
 
-function report({ rows, raw, summary, writesOk }) {
+function report({ rows, raw, base, summary, writesOk }) {
   const date = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const lines = [
     '# Cross-company security test',
@@ -159,9 +162,9 @@ function report({ rows, raw, summary, writesOk }) {
     `Logged in as ${raw.email}, asking for a ${raw.email.includes('alpha') ? 'Beta Logistics' : 'Alpha Transport'} load by its id. The curl line is the equivalent command; the response under it is exactly what the server sent the script:`,
     '',
     '```',
-    `curl -i -b "fd.sid=<session cookie from login>" http://localhost:3000${raw.url}`,
+    `curl -i -b "fd.sid=<session cookie from login>" ${base}${raw.url}`,
     '',
-    `HTTP/1.1 ${raw.res.status} Not Found`,
+    `HTTP/1.1 ${raw.res.status} ${raw.res.statusText}`,
     `Content-Type: ${raw.res.headers.get('content-type')}`,
     '',
     raw.res.text,

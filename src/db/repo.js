@@ -56,17 +56,27 @@ function tenantRepo(db, user, { enforceRls = true } = {}) {
       return run((tx) => selectLoad(tx, id));
     },
 
-    // Moves a load one step forward. The row is locked (FOR UPDATE) so two clicks at the
-    // same moment cannot both move it. Status change and history row commit together.
-    advanceLoad(id) {
+    // Moves a load one step forward, only if it is still at the status the user saw (expectedFrom).
+    // The row is locked (FOR UPDATE), so of two clicks at the same moment the second waits, then
+    // sees the new status and gets "changed". Status change and history row commit together.
+    advanceLoad(id, expectedFrom) {
       return run(async (tx) => {
         const params = [id, companyId];
         const lockSql = `SELECT l.id, l.status, l.driver_id FROM loads l
                           WHERE l.id = $1 AND l.company_id = $2${driverScope(params)} FOR UPDATE`;
         const current = (await tx.query(lockSql, params)).rows[0];
         if (!current) return null;
+        if (current.status !== expectedFrom) return { conflict: 'changed' };
         const next = nextStatus(current.status);
-        if (!next) return { conflict: true };
+        if (!next) return { conflict: 'delivered' };
+        if (next === 'Delivered') {
+          // Business rule: no delivery without a proof of delivery on file.
+          const pod = await tx.query('SELECT 1 FROM documents WHERE load_id = $1 AND company_id = $2 LIMIT 1', [
+            id,
+            companyId,
+          ]);
+          if (!pod.rows.length) return { conflict: 'needs-pod' };
+        }
         await tx.query('UPDATE loads SET status = $1 WHERE id = $2 AND company_id = $3', [next, id, companyId]);
         await tx.query(
           `INSERT INTO load_events (company_id, load_id, from_status, to_status, user_id)

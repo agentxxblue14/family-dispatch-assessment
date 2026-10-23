@@ -20,4 +20,9 @@ module.exports = [
     files: ['public/**/*.js'],
     languageOptions: { sourceType: 'module', globals: globals.browser },
   },
+  {
+    // Runs in Node, but the functions it hands to Chrome run inside the page.
+    files: ['scripts/browser-check.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 ];

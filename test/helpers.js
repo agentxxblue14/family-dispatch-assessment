@@ -11,10 +11,12 @@ const test = require('node:test');
 
 const PASSWORD = 'Demo2026!';
 
-// Every database opened by makeApp is closed when the test file finishes.
+// Every database opened by makeApp is closed, and the temp upload folder removed, when the
+// test file finishes.
 const openDbs = [];
 test.after(async () => {
   for (const db of openDbs) await db.close();
+  require('node:fs').rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
 });
 
 // Opens a fresh database, seeds it and builds an app. Each call is fully independent.

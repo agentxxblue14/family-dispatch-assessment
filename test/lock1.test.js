@@ -42,7 +42,7 @@ test('Alpha owner still gets 404 for a Beta load, and drivers lists stay Alpha o
 
 test('Alpha dispatcher still cannot move a Beta load', async () => {
   const agent = await agentFor(app, 'dispatch@alpha.test');
-  assert.equal((await agent.post(`/api/loads/${ids.loads['B-2004']}/advance`)).status, 404);
+  assert.equal((await agent.post(`/api/loads/${ids.loads['B-2004']}/advance`).send({ from: 'Assigned' })).status, 404);
   const { rows } = await db.query('SELECT status FROM loads WHERE id = $1', [ids.loads['B-2004']]);
   assert.equal(rows[0].status, 'Assigned');
 });

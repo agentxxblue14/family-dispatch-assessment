@@ -11,7 +11,8 @@
     "security-test": "node scripts/security-test.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "browser-check": "node scripts/browser-check.js"
   },
   "license": "UNLICENSED",
   "type": "commonjs",
@@ -30,6 +31,7 @@
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "prettier": "^3.9.10",
+    "puppeteer-core": "^25.13.0",
     "supertest": "^7.3.1"
   },
   "engines": {
