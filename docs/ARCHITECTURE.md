@@ -105,6 +105,7 @@ One table in `src/policy/permissions.js`, one function `can(user, action, load)`
 - The status workflow is server-side: `nextStatus()` picks the next step, so a load cannot skip a step or move backwards. The browser sends only `{"from": "<status on screen>"}`, never the status to move to.
 - If the load is no longer at that status (a double click, or a colleague moved it first), the answer is `409 This load has changed`. The check runs on a row locked with `SELECT ... FOR UPDATE`, in the same transaction that writes the history row, so ten clicks at the same moment move the load exactly one step (tested). The button is also disabled while its request runs.
 - A load cannot be marked Delivered until a delivery document (POD) is on file: `409 Upload the delivery document (POD) before marking Delivered`.
+- Like tenancy, the workflow has a second lock in the database. A trigger on `loads` (`check_load_status` in `schema.sql`) refuses any status change that is not one step forward, and any Delivered without a document, even from a query that bypasses the repository. Tested in `rls.test.js`.
 - Every 403 and 404 is logged to `access_denials`. The owner sees their own company's blocked attempts in the Blocked log tab.
 
 ## Data model
@@ -150,9 +151,9 @@ Indexes lead with `company_id` (for example `loads (company_id, driver_id)`), be
 | Malicious upload | .exe renamed .pdf, huge file, `../` in the name, a PDF hiding HTML | File signature check, 5 MB cap, random stored names in a per-company folder, forced download with nosniff and a sandbox CSP | documents |
 | SQL injection | id = `1 OR 1=1` | Strict id pattern, parameterized queries everywhere, `set_config` with a parameter | isolation |
 | Stored XSS | Script in a file name | File names cleaned on upload; the page inserts all text with `textContent`, never `innerHTML` | documents, code review |
-| Skipping a status | Assigned straight to Delivered | Server computes the next status; the body only says which status the user saw | workflow |
+| Skipping a status | Assigned straight to Delivered | Server computes the next status (the body only says which status the user saw); a database trigger refuses any jump | workflow, rls |
 | Double click or stale screen | Two clicks move a load two steps | `{from}` checked on a locked row, 409 if it changed; button disabled while pending | workflow (10 parallel clicks, 1 move) |
-| Delivered with no proof | Marking Delivered before any POD exists | Server refuses Delivered until a document is on file | workflow, matrix |
+| Delivered with no proof | Marking Delivered before any POD exists | Server refuses Delivered until a document is on file; the database trigger refuses it too | workflow, matrix, rls |
 | App role does more than intended | Changing a load's driver or company through the status update | Column-level grant: app_user may update `status` only | rls |
 
 ## Decisions and why

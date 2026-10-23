@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/agentxxblue14/family-dispatch-assessment/actions/workflows/test.yml/badge.svg)](https://github.com/agentxxblue14/family-dispatch-assessment/actions/workflows/test.yml)
 
-A small working dispatch app with two fictional trucking companies, **Alpha Transport** and **Beta Logistics**. Each has an owner, a dispatcher, two drivers, two trucks and four loads. Owners and dispatchers see their company's loads, drivers and trucks; drivers see only their own loads; loads move Assigned > Picked Up > Delivered; delivery documents (POD) attach to loads. A user of one company can never read or change the other company's data. This is enforced on the server by two independent locks (the application filter and Postgres Row Level Security), and 73 automated tests, a 32-attempt attack script and a browser check of all 8 users prove it.
+A small working dispatch app with two fictional trucking companies, **Alpha Transport** and **Beta Logistics**. Each has an owner, a dispatcher, two drivers, two trucks and four loads. Owners and dispatchers see their company's loads, drivers and trucks; drivers see only their own loads; loads move Assigned > Picked Up > Delivered; delivery documents (POD) attach to loads. A user of one company can never read or change the other company's data. This is enforced on the server by two independent locks (the application filter and Postgres Row Level Security), and 75 automated tests, a 32-attempt attack script and a browser check of all 8 users prove it.
 
 All data is fictional sample data.
 
@@ -96,12 +96,12 @@ npm run browser-check  # headless Chrome as all 8 users, writes docs/BROWSER-CHE
 npm run lint           # ESLint
 ```
 
-Results from the last local run (Node 24.19 on Windows; the same 73 also pass on Node 20.20):
+Results from the last local run (Node 24.19 on Windows; the suite also passes on Node 20.20):
 
 | File | What it covers | Tests |
 |---|---|---|
 | test/policy.test.js | Role table and status workflow as pure functions | 10 |
-| test/rls.test.js | Lock 2 alone: Row Level Security with raw SQL, no app code; app role may update status only | 8 |
+| test/rls.test.js | Lock 2 alone: Row Level Security with raw SQL, no app code; app role may update status only; database trigger refuses skipped steps and Delivered without a POD | 10 |
 | test/lock1.test.js | Lock 1 alone: RLS switched off, the API still isolates | 5 |
 | test/auth.test.js | Login, logout, cookie flags, rate limits, forged IP header, session fixation, headers | 14 |
 | test/isolation.test.js | Cross-company reads, writes, spoofed company_id, SQL injection, blocked log | 8 |
@@ -109,12 +109,12 @@ Results from the last local run (Node 24.19 on Windows; the same 73 also pass on
 | test/workflow.test.js | Assigned > Picked Up > Delivered, history, POD before Delivered, stale screen and 10 simultaneous clicks | 7 |
 | test/documents.test.js | Upload and download, file type by signature, size cap, path tricks, isolation | 12 |
 | test/matrix.test.js | Every user x every load x view, document, advance: 192 checks in one test | 1 |
-| **Total** | | **73 passed, 0 failed** |
+| **Total** | | **75 passed, 0 failed** |
 
 ```
 ℹ matrix: 192 checks, 0 unexpected
-ℹ tests 73
-ℹ pass 73
+ℹ tests 75
+ℹ pass 75
 ℹ fail 0
 ```
 
@@ -154,7 +154,7 @@ docs/                    architecture, security test, walkthrough, AI disclosure
 ## Known issues and unfinished items
 
 - **Data resets on every restart, by design.** The database (PGlite) and the sessions live in memory. Production would use hosted Postgres and a Postgres-backed session store.
-- **The deployment must run one instance.** Because sessions and data are in memory, two instances would not share them. In Replit's Publish screen choose Reserved VM, or Autoscale with the maximum number of servers set to 1 (the deployment type is chosen there, not in `.replit`).
+- **The deployment must run one instance.** Because sessions and data are in memory, two instances would not share them. In Replit's Publish screen choose Reserved VM, or Autoscale with the maximum number of servers set to 1 (`.replit` does not set it: Replit's documentation describes choosing the type in that screen and does not document a `.replit` value for Reserved VM, so it is left as an explicit step).
 - **Uploaded files are stored on the server's disk** under `uploads/<company id>/` and are cleared on restart. Production would use object storage with signed URLs.
 - **No create or edit screens** for loads, drivers, trucks or users. The brief asks to view and move sample data; the seed provides it.
 - **The login page lists every sample account and the shared password.** This is on purpose so reviewers can log in with one click; a real product would never do this.

@@ -130,6 +130,7 @@ async function main() {
 
   server.close();
   await db.close();
+  fs.rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
 
   const leaks = rows.filter((r) => r.result === 'LEAK').length + (writesOk ? 0 : 1);
   const summary = `${rows.length} cross-company attempts, ${leaks} leaks`;
@@ -159,7 +160,7 @@ function report({ rows, raw, base, summary, writesOk }) {
     '',
     '## One request in full',
     '',
-    `Logged in as ${raw.email}, asking for a ${raw.email.includes('alpha') ? 'Beta Logistics' : 'Alpha Transport'} load by its id. The curl line is the equivalent command; the response under it is exactly what the server sent the script:`,
+    `Logged in as ${raw.email}, asking for a ${raw.email.includes('alpha') ? 'Beta Logistics' : 'Alpha Transport'} load by its id. The curl line is the equivalent command (the port is the random one used for this run); the response under it is exactly what the server sent the script:`,
     '',
     '```',
     `curl -i -b "fd.sid=<session cookie from login>" ${base}${raw.url}`,

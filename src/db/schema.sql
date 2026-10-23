@@ -84,3 +84,27 @@ CREATE INDEX users_company ON users (company_id);
 CREATE INDEX events_company_load ON load_events (company_id, load_id);
 CREATE INDEX docs_company_load ON documents (company_id, load_id);
 CREATE INDEX denials_company ON access_denials (company_id);
+
+-- Workflow rules, enforced by the database as well as by the app (a second lock, like tenancy).
+-- A status may only move one step forward, and Delivered needs a delivery document on file.
+-- Setting the same status again is a no-op and allowed.
+CREATE FUNCTION check_load_status() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.status = OLD.status THEN
+    RETURN NEW;
+  END IF;
+  IF NOT ((OLD.status = 'Assigned' AND NEW.status = 'Picked Up')
+       OR (OLD.status = 'Picked Up' AND NEW.status = 'Delivered')) THEN
+    RAISE EXCEPTION 'status change from % to % is not allowed', OLD.status, NEW.status;
+  END IF;
+  IF NEW.status = 'Delivered' AND NOT EXISTS (
+       SELECT 1 FROM documents d WHERE d.load_id = NEW.id AND d.company_id = NEW.company_id) THEN
+    RAISE EXCEPTION 'a POD is required before a load is Delivered';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER load_status_rules
+  BEFORE UPDATE OF status ON loads
+  FOR EACH ROW EXECUTE FUNCTION check_load_status();

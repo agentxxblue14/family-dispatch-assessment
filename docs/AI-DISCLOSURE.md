@@ -47,7 +47,7 @@ I can walk through any file on a call: how a request gets its company, why both 
 
 ## Hiring-manager review: findings and changes
 
-The reviewer reproduced the test counts, coverage, the 32-attempt security result and the "both locks broken gives 18 leaks" check, and scored tenant isolation 5 of 5. What it found and what changed:
+The reviewer reran the tests, the coverage report and the security script itself rather than trusting the README. What it found and what changed:
 
 | Finding | Change | Covered by |
 |---|---|---|
@@ -57,9 +57,10 @@ The reviewer reproduced the test counts, coverage, the 32-attempt security resul
 | `.replit` named Autoscale while the app must run one instance | Deployment type left to Replit's Publish screen, with single-instance instructions | (configuration) |
 | Security test report printed a fixed port and status text | Real values from the response | security-test output |
 | A load could be Delivered without a POD | Server refuses Delivered until a document is on file | workflow.test.js, matrix.test.js |
+| Re-grade: workflow rules lived only in app code, unlike tenancy | A database trigger also refuses a skipped step or a Delivered without a POD | rls.test.js: two trigger tests |
 | Browser check claim could not be rerun | The check is now `npm run browser-check` and writes docs/BROWSER-CHECK.md | browser-check output |
 | Tests left temporary folders behind; README lacked the Windows port syntax and some known issues | Fixed | (housekeeping) |
 
-It also said the submission alone cannot show that I understand the code, because the AI wrote it. That is fair. That's why the walkthrough is recorded in my own voice, and why I'm happy to explain any file live.
+It also said the submission alone cannot show that I understand the code, because the AI wrote it. That is fair, and the answer has to come from me: I'm happy to explain any file live, or change something on a call.
 
 A note on the git history: each phase's tests and code were committed together, so the history does not show the failing test runs. Those happened in the Claude Code session before each commit.

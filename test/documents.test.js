@@ -144,4 +144,5 @@ test('startup cleanup removes only stored upload files, nothing else', async () 
   assert.equal(fs.existsSync(other), true);
   assert.equal(fs.existsSync(outside), true);
   clearUploads(path.join(dir, 'does-not-exist')); // a missing folder is fine
+  fs.rmSync(dir, { recursive: true, force: true });
 });

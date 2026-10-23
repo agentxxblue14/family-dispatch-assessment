@@ -22,6 +22,10 @@ const POD = path.join(ROOT, 'seed-files', 'POD-A-1002.pdf');
 const CHROME_PATHS = [
   process.env.CHROME_PATH,
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+  '/usr/bin/chromium',
   '/usr/bin/google-chrome',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].filter(Boolean);
@@ -179,11 +183,27 @@ async function checkUser(browser, base, u, first) {
     const lastButton = await cards[cards.length - 1].$('button.primary');
     await lastButton.click();
     await waitForMessage(page, 'A-1003: Upload the delivery document (POD) before marking Delivered');
-    check(u.name, true, 'Delivered without a POD is refused with a clear message');
+    const a1003 = await page.$$eval(
+      '.load-card',
+      (cards) => cards.find((c) => c.textContent.includes('A-1003'))?.querySelector('.pill')?.textContent,
+    );
+    check(
+      u.name,
+      a1003 === 'Picked Up',
+      `Delivered without a POD is refused with a clear message (A-1003 still ${a1003})`,
+    );
     // A-1001 now has Sam's POD, so Miguel can deliver it.
     await clickText(page, '.load-card button.primary', 'Mark Delivered');
     await waitForMessage(page, 'A-1001 moved to Delivered');
-    check(u.name, true, 'driver marks own load Delivered once the POD is on file');
+    const a1001 = await page.$$eval(
+      '.load-card',
+      (cards) => cards.find((c) => c.textContent.includes('A-1001'))?.querySelector('.pill')?.textContent,
+    );
+    check(
+      u.name,
+      a1001 === 'Delivered',
+      `driver marks own load Delivered once the POD is on file (A-1001 now ${a1001})`,
+    );
     await shot(page, 'driver-after-delivery', [390]);
   }
 
@@ -213,6 +233,7 @@ async function main() {
     await browser.close();
     server.close();
     await db.close();
+    fs.rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
   }
 
   const failed = results.filter((r) => !r.ok);

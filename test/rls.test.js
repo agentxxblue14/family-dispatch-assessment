@@ -88,3 +88,23 @@ test('app_user can change a load status but no other load column', async () => {
   );
   assert.equal(r.affectedRows, 1);
 });
+
+// Review B re-grade: the workflow rules lived only in app code. A database trigger now refuses
+// a skipped step or a Delivered without a POD, even for a query that bypasses the repository.
+test('database refuses a skipped status step, even from app_user', async () => {
+  await assert.rejects(
+    withTenant(db, ids.companies.alpha, (tx) =>
+      tx.query("UPDATE loads SET status = 'Delivered' WHERE id = $1", [ids.loads['A-1004']]),
+    ),
+    /status change from Assigned to Delivered/,
+  );
+});
+
+test('database refuses Delivered when the load has no POD', async () => {
+  await assert.rejects(
+    withTenant(db, ids.companies.alpha, (tx) =>
+      tx.query("UPDATE loads SET status = 'Delivered' WHERE id = $1", [ids.loads['A-1003']]),
+    ),
+    /POD/,
+  );
+});
