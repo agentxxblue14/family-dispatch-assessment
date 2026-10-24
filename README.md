@@ -6,7 +6,7 @@ A small working dispatch app with two fictional trucking companies, **Alpha Tran
 
 All data is fictional sample data.
 
-- **Live app (Replit):** _link added after import_
+- **Replit:** the project link is shared privately with the reviewer. Anyone can also import this repo into Replit (Create App, Import from GitHub) and press Run.
 - **Source (GitHub):** https://github.com/agentxxblue14/family-dispatch-assessment
 - **Architecture, tenant isolation and role permissions:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Cross-company security test results:** [docs/SECURITY-TEST.md](docs/SECURITY-TEST.md)
