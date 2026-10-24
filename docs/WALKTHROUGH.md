@@ -1,7 +1,5 @@
 # Walkthrough
 
-**Recorded walkthrough:** _video link added after recording_
-
 This is the written version. It follows the brief's eight required functions in order, with screenshots from a run of the app in headless Chrome (all in [screenshots/](screenshots/)).
 
 ## 1. Login
